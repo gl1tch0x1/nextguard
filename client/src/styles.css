@@ -15264,6 +15264,131 @@ pre, code, .poc-code-block, .terminal-body pre {
     border-radius: 4px;
 }
 
+/* Track Philosophy & Objectives Bullet List */
+.track-philosophy-highlights {
+    margin-top: 18px;
+    padding-top: 18px;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.track-highlights-heading {
+    display: block;
+    font-size: 11px;
+    font-weight: 700;
+    color: #94a3b8;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+}
+
+.track-highlights-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.track-highlight-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    font-size: 13.5px;
+    line-height: 1.6;
+    color: #cbd5e1;
+}
+
+.track-highlight-bullet {
+    flex-shrink: 0;
+    margin-top: 3px;
+    color: #baff66;
+}
+
+.track-highlight-title {
+    color: #f1f5f9;
+    font-weight: 700;
+}
+
+.track-highlight-body {
+    color: #cbd5e1;
+}
+
+/* Virtual Lab Card & Deliverables Bullets */
+.spec-lab-card {
+    background: rgba(12, 17, 26, 0.9);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 10px;
+    padding: 22px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 16px;
+    transition: all 0.2s ease;
+}
+
+.spec-lab-card:hover {
+    border-color: rgba(186, 255, 102, 0.25);
+    background: rgba(14, 20, 30, 0.95);
+    transform: translateY(-2px);
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.35);
+}
+
+.spec-lab-focus-box {
+    background: rgba(7, 10, 15, 0.55);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    padding: 14px 16px;
+    margin-top: 14px;
+}
+
+.spec-lab-focus-title {
+    display: block;
+    font-size: 10.5px;
+    font-weight: 700;
+    color: #64748b;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+}
+
+.spec-lab-bullet-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.spec-lab-bullet-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 9px;
+    font-size: 12.5px;
+    line-height: 1.55;
+    color: #cbd5e1;
+}
+
+.spec-lab-bullet-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #baff66;
+    margin-top: 7px;
+    flex-shrink: 0;
+    box-shadow: 0 0 6px rgba(186, 255, 102, 0.4);
+}
+
+.spec-lab-bullet-strong {
+    color: #f8fafc;
+    font-weight: 600;
+}
+
+.spec-lab-bullet-desc {
+    color: #94a3b8;
+}
+
 /* Infrastructure Sizing Matrix */
 .spec-sizing-container {
     display: flex;

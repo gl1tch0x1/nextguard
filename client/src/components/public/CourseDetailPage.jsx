@@ -187,7 +187,8 @@ export default function CourseDetailPage({
           title: typeof m.labExercise === 'object' ? m.labExercise.title : `Lab: ${m.title}`,
           objective: typeof m.labExercise === 'object' ? m.labExercise.description : (m.summary || m.labExercise),
           difficulty: track.level || 'Intermediate',
-          tools: m.topics?.slice(0, 3) || track.tools?.slice(0, 3) || ['Virtual Sandbox CLI']
+          topics: m.topics || [],
+          duration: m.duration || '1 session'
         }));
 
   const tools = track.tools || [];
@@ -501,12 +502,37 @@ export default function CourseDetailPage({
                   </div>
                   <p className="threat-context-lead-text">{philosophyText}</p>
 
-                  <div className="threat-framework-pills">
-                    {highlights.map((hl, hIdx) => (
-                      <span key={hIdx} className="framework-pill">
-                        {hl}
-                      </span>
-                    ))}
+                  {/* Clean, Readable Bullet Points for Core Focus Areas */}
+                  <div className="track-philosophy-highlights">
+                    <span className="track-highlights-heading">
+                      CORE CURRICULUM HIGHLIGHTS & DELIVERABLES:
+                    </span>
+                    <ul className="track-highlights-list">
+                      {highlights.map((hl, hIdx) => {
+                        const colonIdx = hl.indexOf(':');
+                        const hasColon = colonIdx > -1 && colonIdx < 50;
+                        const lead = hasColon ? hl.slice(0, colonIdx) : null;
+                        const rest = hasColon ? hl.slice(colonIdx + 1).trim() : hl;
+
+                        return (
+                          <li key={hIdx} className="track-highlight-item">
+                            <span className="track-highlight-bullet">
+                              <CheckCircle2 size={15} color="#baff66" />
+                            </span>
+                            <div>
+                              {lead ? (
+                                <>
+                                  <strong className="track-highlight-title">{lead}: </strong>
+                                  <span className="track-highlight-body">{rest}</span>
+                                </>
+                              ) : (
+                                <span className="track-highlight-body">{hl}</span>
+                              )}
+                            </div>
+                          </li>
+                        );
+                      })}
+                    </ul>
                   </div>
                 </div>
 
@@ -724,55 +750,82 @@ export default function CourseDetailPage({
               <div className="spec-tab-content-fade">
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '16px' }}>
                   {labs.map((lab, lIdx) => (
-                    <div
-                      key={lIdx}
-                      style={{
-                        background: 'rgba(12, 17, 26, 0.9)',
-                        border: '1px solid rgba(255, 255, 255, 0.08)',
-                        borderRadius: '10px',
-                        padding: '20px',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        justifyContent: 'space-between',
-                        gap: '12px',
-                        transition: 'all 0.2s ease'
-                      }}
-                    >
+                    <div key={lIdx} className="spec-lab-card">
                       <div>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-                          <span style={{ fontSize: '10px', fontWeight: 700, color: '#baff66', background: 'rgba(186, 255, 102, 0.1)', padding: '2px 7px', borderRadius: '4px', fontFamily: 'var(--font-mono, monospace)' }}>
+                          <span style={{ fontSize: '10.5px', fontWeight: 700, color: '#baff66', background: 'rgba(186, 255, 102, 0.1)', border: '1px solid rgba(186, 255, 102, 0.25)', padding: '2px 8px', borderRadius: '4px', fontFamily: 'var(--font-mono, monospace)' }}>
                             VIRTUAL LAB 0{lIdx + 1}
                           </span>
-                          <span style={{ fontSize: '10px', fontWeight: 600, color: '#94a3b8' }}>
+                          <span style={{ fontSize: '11px', fontWeight: 600, color: '#94a3b8' }}>
                             {lab.difficulty || 'Intermediate'}
                           </span>
                         </div>
-                        <h4 style={{ fontSize: '13.5px', fontWeight: 700, color: '#f1f5f9', margin: '0 0 8px 0' }}>
+                        <h4 style={{ fontSize: '14px', fontWeight: 700, color: '#f1f5f9', margin: '0 0 8px 0', lineHeight: 1.4 }}>
                           {lab.title}
                         </h4>
-                        <p style={{ fontSize: '12px', color: '#94a3b8', lineHeight: 1.55, margin: 0 }}>
+                        <p style={{ fontSize: '12.5px', color: '#cbd5e1', lineHeight: 1.6, margin: 0 }}>
                           {lab.objective}
                         </p>
+
+                        {/* Hands-on Simulation Topics in Clean Bullet Points */}
+                        {lab.topics && lab.topics.length > 0 && (
+                          <div className="spec-lab-focus-box">
+                            <span className="spec-lab-focus-title">
+                              HANDS-ON SIMULATION OBJECTIVES:
+                            </span>
+                            <ul className="spec-lab-bullet-list">
+                              {lab.topics.map((topic, tIdx) => {
+                                const colonIdx = topic.indexOf(':');
+                                const hasColon = colonIdx > -1 && colonIdx < 45;
+                                const tTitle = hasColon ? topic.slice(0, colonIdx) : null;
+                                const tDesc = hasColon ? topic.slice(colonIdx + 1).trim() : topic;
+
+                                return (
+                                  <li key={tIdx} className="spec-lab-bullet-item">
+                                    <span className="spec-lab-bullet-dot" />
+                                    <div>
+                                      {tTitle ? (
+                                        <>
+                                          <strong className="spec-lab-bullet-strong">{tTitle}: </strong>
+                                          <span className="spec-lab-bullet-desc">{tDesc}</span>
+                                        </>
+                                      ) : (
+                                        <span className="spec-lab-bullet-desc">{topic}</span>
+                                      )}
+                                    </div>
+                                  </li>
+                                );
+                              })}
+                            </ul>
+                          </div>
+                        )}
                       </div>
 
-                      {lab.tools && lab.tools.length > 0 && (
-                        <div style={{ borderTop: '1px solid rgba(255, 255, 255, 0.06)', paddingTop: '10px', display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                          {lab.tools.map((tl, tIdx) => (
-                            <span
-                              key={tIdx}
-                              style={{
-                                fontSize: '10px',
-                                fontFamily: 'var(--font-mono, monospace)',
-                                color: '#baff66',
-                                background: 'rgba(186, 255, 102, 0.06)',
-                                border: '1px solid rgba(186, 255, 102, 0.16)',
-                                padding: '2px 7px',
-                                borderRadius: '4px'
-                              }}
-                            >
-                              {tl}
-                            </span>
-                          ))}
+                      {/* Tooling Environment Micro-Pills */}
+                      {tools && tools.length > 0 && (
+                        <div style={{ borderTop: '1px solid rgba(255, 255, 255, 0.06)', paddingTop: '10px', display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                          <span style={{ fontSize: '10px', fontWeight: 700, color: '#64748b', letterSpacing: '0.04em', textTransform: 'uppercase' }}>
+                            Environment:
+                          </span>
+                          {tools.slice(0, 3).map((tl, tIdx) => {
+                            const name = typeof tl === 'string' ? tl : tl.name;
+                            return (
+                              <span
+                                key={tIdx}
+                                style={{
+                                  fontSize: '10px',
+                                  fontFamily: 'var(--font-mono, monospace)',
+                                  color: '#baff66',
+                                  background: 'rgba(186, 255, 102, 0.06)',
+                                  border: '1px solid rgba(186, 255, 102, 0.16)',
+                                  padding: '2px 7px',
+                                  borderRadius: '4px'
+                                }}
+                              >
+                                {name}
+                              </span>
+                            );
+                          })}
                         </div>
                       )}
                     </div>
