@@ -18,7 +18,11 @@ import {
   Cpu,
   Cloud,
   AlertCircle,
-  RefreshCw
+  RefreshCw,
+  Sparkles,
+  Calendar,
+  Lock,
+  Tag
 } from 'lucide-react';
 import { apiRequest } from '../../api/client.js';
 import { useAuth } from '../../context/AuthContext.jsx';
@@ -27,6 +31,7 @@ import { CopyButton } from '../ui/copy-button.jsx';
 import { Badge } from '../ui/badge.jsx';
 import { ImageLightbox } from '../ui/index.js';
 import CyberHeroBanner from './CyberHeroBanner.jsx';
+import { RESEARCH_DETAILS } from '../../data/researchDetails.js';
 
 const iconMap = {
   'continuous-purple-teaming-telemetry': Terminal,
@@ -45,7 +50,6 @@ export default function ResearchDetailPage({
 }) {
   const { user } = useAuth();
   const [copiedLink, setCopiedLink] = useState(false);
-  const [copiedCode, setCopiedCode] = useState(false);
   const [article, setArticle] = useState(null);
   const [livePapersList, setLivePapersList] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -58,22 +62,52 @@ export default function ResearchDetailPage({
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [articleSlug]);
 
-  // Fetch paper from database via API
+  // Fetch paper from database via API, deeply merging with local rich whitepaper data
   useEffect(() => {
     if (!articleSlug) return;
     setLoading(true);
     setError(null);
 
+    const localPaper = RESEARCH_DETAILS[articleSlug] || null;
+
     apiRequest(`/research/${articleSlug}`)
       .then((data) => {
         if (data?.research) {
-          setArticle(data.research);
+          const merged = {
+            ...localPaper,
+            ...data.research,
+            // Keep rich fields from local paper if database version lacks them
+            keyFindings: (data.research.keyFindings && data.research.keyFindings.length > 0)
+              ? data.research.keyFindings
+              : localPaper?.keyFindings || [],
+            threatModel: (data.research.threatModel && typeof data.research.threatModel === 'object')
+              ? data.research.threatModel
+              : localPaper?.threatModel || null,
+            sections: (data.research.sections && data.research.sections.length > 0)
+              ? data.research.sections
+              : localPaper?.sections || [],
+            architecturePoC: data.research.architecturePoC || localPaper?.architecturePoC || '',
+            pocImages: (data.research.pocImages && data.research.pocImages.length > 0)
+              ? data.research.pocImages
+              : localPaper?.pocImages || [],
+            remediationChecklist: (data.research.remediationChecklist && data.research.remediationChecklist.length > 0)
+              ? data.research.remediationChecklist
+              : localPaper?.remediationChecklist || [],
+            bannerImage: data.research.bannerImage || localPaper?.bannerImage || ''
+          };
+          setArticle(merged);
+        } else if (localPaper) {
+          setArticle(localPaper);
         } else {
           setError('Research publication not found in database.');
         }
       })
       .catch((err) => {
-        setError(err.message || 'Unable to connect to research database.');
+        if (localPaper) {
+          setArticle(localPaper);
+        } else {
+          setError(err.message || 'Unable to connect to research database.');
+        }
       })
       .finally(() => {
         setLoading(false);
@@ -84,11 +118,15 @@ export default function ResearchDetailPage({
   useEffect(() => {
     apiRequest('/research')
       .then((data) => {
-        if (data?.research && Array.isArray(data.research)) {
+        if (data?.research && Array.isArray(data.research) && data.research.length > 0) {
           setLivePapersList(data.research);
+        } else {
+          setLivePapersList(Object.values(RESEARCH_DETAILS));
         }
       })
-      .catch(() => {});
+      .catch(() => {
+        setLivePapersList(Object.values(RESEARCH_DETAILS));
+      });
   }, []);
 
   const handleNavigateToPaper = (slug) => {
@@ -105,18 +143,74 @@ export default function ResearchDetailPage({
     }
   };
 
-  const handleCopyCode = () => {
-    if (navigator.clipboard && article?.architecturePoC) {
-      navigator.clipboard.writeText(article.architecturePoC);
-      setCopiedCode(true);
-      setTimeout(() => setCopiedCode(false), 2500);
-    }
+  // Smart Formatter for Section Bodies: handles paragraphs, numbered lists, and bullet points
+  const renderFormattedBody = (rawText) => {
+    if (!rawText) return null;
+
+    const paragraphs = rawText.split(/\n\s*\n/);
+
+    return paragraphs.map((para, pIdx) => {
+      const trimmed = para.trim();
+
+      // Check if paragraph is an itemized list (- **Phase A**: ...)
+      if (trimmed.startsWith('- ') || trimmed.includes('\n- ')) {
+        const lines = trimmed.split('\n').filter((l) => l.trim().startsWith('- '));
+        if (lines.length > 0) {
+          return (
+            <ul key={pIdx} className="article-bullet-list">
+              {lines.map((line, lIdx) => {
+                const cleanLine = line.replace(/^-\s*/, '');
+                const boldMatch = cleanLine.match(/^\*\*(.*?)\*\*(.*)/);
+                if (boldMatch) {
+                  return (
+                    <li key={lIdx} className="article-bullet-item">
+                      <span className="article-bullet-dot" />
+                      <div>
+                        <strong style={{ color: '#f8fafc', fontWeight: 600 }}>{boldMatch[1]}</strong>
+                        <span style={{ color: '#cbd5e1' }}>{boldMatch[2]}</span>
+                      </div>
+                    </li>
+                  );
+                }
+                return (
+                  <li key={lIdx} className="article-bullet-item">
+                    <span className="article-bullet-dot" />
+                    <span>{cleanLine}</span>
+                  </li>
+                );
+              })}
+            </ul>
+          );
+        }
+      }
+
+      // Check if paragraph is a numbered list (1. ..., 2. ...)
+      if (/^\d+\.\s/.test(trimmed) || trimmed.includes('\n1. ')) {
+        const lines = trimmed.split('\n').filter((l) => /^\d+\.\s/.test(l.trim()));
+        if (lines.length > 0) {
+          return (
+            <ol key={pIdx} className="article-ordered-list">
+              {lines.map((line, lIdx) => {
+                const text = line.replace(/^\d+\.\s*/, '');
+                return <li key={lIdx}>{text}</li>;
+              })}
+            </ol>
+          );
+        }
+      }
+
+      return (
+        <p key={pIdx} className="section-body-text">
+          {trimmed}
+        </p>
+      );
+    });
   };
 
   if (loading) {
     return (
       <div className="research-detail-root" style={{ minHeight: '80vh', padding: '120px 20px' }}>
-        <div className="container" style={{ maxWidth: '900px' }}>
+        <div className="spec-canvas-container" style={{ maxWidth: '900px' }}>
           <div className="skeleton-line" style={{ width: '220px', height: '24px', marginBottom: '32px' }} />
           <div className="skeleton-line" style={{ width: '85%', height: '48px', marginBottom: '20px' }} />
           <div className="skeleton-line" style={{ width: '100%', height: '20px', marginBottom: '12px' }} />
@@ -130,11 +224,11 @@ export default function ResearchDetailPage({
   if (error || !article) {
     return (
       <div className="research-detail-root" style={{ minHeight: '80vh', padding: '120px 20px' }}>
-        <div className="container" style={{ maxWidth: '700px', textAlign: 'center' }}>
+        <div className="spec-canvas-container" style={{ maxWidth: '700px', textAlign: 'center' }}>
           <div className="content-error-panel" style={{ flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
-            <AlertCircle size={36} className="error-icon" style={{ marginBottom: '16px' }} />
+            <AlertCircle size={36} className="error-icon" style={{ marginBottom: '16px', color: '#ff5f56' }} />
             <h3>Research Publication Not Found</h3>
-            <p style={{ maxWidth: '500px', margin: '0 auto 24px' }}>
+            <p style={{ maxWidth: '500px', margin: '0 auto 24px', color: '#cbd5e1' }}>
               {error || `No published research publication exists matching slug: "${articleSlug}".`}
             </p>
             <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
@@ -158,8 +252,8 @@ export default function ResearchDetailPage({
   const allViewerImages = [
     ...(article.bannerImage ? [{
       url: article.bannerImage,
-      title: `${article.title} (Hero Banner)`,
-      caption: 'High-resolution official research publication hero banner specification.'
+      title: `${article.title} (Hero Topology Architecture)`,
+      caption: 'High-resolution official research publication hero architecture topology.'
     }] : []),
     ...(article.pocImages || [])
   ];
@@ -173,7 +267,7 @@ export default function ResearchDetailPage({
     <div className="research-detail-root">
       {/* 1. Sticky Navigation & Breadcrumbs Bar */}
       <header className="research-detail-header">
-        <div className="container research-detail-header-inner">
+        <div className="spec-canvas-container research-detail-header-inner">
           <div className="research-header-left">
             <button
               type="button"
@@ -181,13 +275,17 @@ export default function ResearchDetailPage({
               onClick={onBack}
               title="Return to Research & Labs feed"
             >
-              <ArrowLeft size={15} />
+              <ArrowLeft size={14} />
               <span>All Research & Labs</span>
             </button>
-            <span className="header-divider">/</span>
-            <span className="header-category-tag">{article.category || 'CYBER RESEARCH'}</span>
-            <span className="header-divider">/</span>
-            <span className="header-current-title">{article.title}</span>
+            <span className="header-divider" style={{ color: '#475569' }}>/</span>
+            <span className="header-category-tag" style={{ color: '#baff66', fontWeight: 600 }}>
+              {article.category || 'CYBER RESEARCH'}
+            </span>
+            <span className="header-divider" style={{ color: '#475569' }}>/</span>
+            <span className="header-current-title" style={{ color: '#e2e8f0', maxWidth: '380px' }}>
+              {article.title}
+            </span>
           </div>
 
           <div className="research-header-right">
@@ -206,50 +304,93 @@ export default function ResearchDetailPage({
 
             <button
               type="button"
-              className="btn-share-research"
+              className="btn-share-paper"
               onClick={handleShare}
               title="Copy direct link to this research paper"
             >
-              <Share2 size={14} />
+              {copiedLink ? <Check size={14} color="#baff66" /> : <Share2 size={14} />}
               <span>{copiedLink ? 'Link Copied!' : 'Share Paper'}</span>
+            </button>
+
+            <button
+              type="button"
+              className="btn btn-secondary btn-sm"
+              onClick={() => onContact && onContact(article.title)}
+              style={{ padding: '6px 12px', fontSize: '11px', display: 'inline-flex', alignItems: 'center', gap: '5px' }}
+            >
+              <span>Engage Team</span>
+              <ArrowUpRight size={13} />
             </button>
           </div>
         </div>
       </header>
 
       {/* 2. Flagship Header Section */}
-      <section className="research-article-hero">
-        <div className="container">
-          <div className="article-hero-eyebrow">
-            <span className="eyebrow-accent-dot" />
-            <span className="mono">PUBLICATION /{article.number || '01'}</span>
-            <span className="eyebrow-slash">·</span>
-            <span>{article.category || 'CYBER RESEARCH'}</span>
-            <span className="eyebrow-slash">·</span>
-            <span className="mono">{article.publishedDate || 'October 2026'}</span>
+      <section className="research-hero-section">
+        <div className="spec-canvas-container">
+          <div className="spec-meta-pills-row" style={{ marginBottom: '16px' }}>
+            <span className="spec-code-tag">RESEARCH-PUB /{article.number || '01'}</span>
+            <span className="spec-category-tag">{article.category || 'CYBER RESEARCH'}</span>
+            <span className="spec-status-beacon">
+              <span className="beacon-pulse" />
+              PEER REVIEWED & VERIFIED
+            </span>
           </div>
 
-          <h1 className="article-hero-title">{article.title}</h1>
-          {article.subtitle && <p className="article-hero-subtitle">{article.subtitle}</p>}
-          <p className="article-hero-lead">{article.summary}</p>
+          <h1 className="research-hero-title">{article.title}</h1>
+          
+          {article.subtitle && (
+            <p className="research-hero-subtitle">{article.subtitle}</p>
+          )}
 
-          <div className="article-meta-bar">
-            <div className="article-meta-item">
-              <span className="meta-label">PRIMARY INVESTIGATOR</span>
-              <span className="meta-val">{article.authorName || 'NexGuard Research Team'}</span>
+          <p className="spec-hero-lead-summary" style={{ maxWidth: '880px', marginBottom: '24px' }}>
+            {article.summary}
+          </p>
+
+          {/* Author & Publication Metadata Bar */}
+          <div className="research-meta-bar">
+            <div className="meta-author-box">
+              <div className="author-avatar">
+                <UserCheck size={18} />
+              </div>
+              <div className="author-details">
+                <span className="author-name">{article.authorName || 'NexGuard Research Team'}</span>
+                <span className="author-role">{article.authorRole || 'Security Researcher'}</span>
+              </div>
             </div>
-            <div className="article-meta-divider" />
-            <div className="article-meta-item">
-              <span className="meta-label">ROLE</span>
-              <span className="meta-val">{article.authorRole || 'Security Researcher'}</span>
-            </div>
-            <div className="article-meta-divider" />
-            <div className="article-meta-item">
-              <span className="meta-label">ESTIMATED STUDY</span>
-              <span className="meta-val mono">
-                <Clock size={13} /> {article.readTimeMinutes || 10} MIN READ
+
+            <div className="meta-divider-vertical" />
+
+            <div className="meta-item">
+              <span className="meta-label">PUBLICATION DATE</span>
+              <span className="meta-val" style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                <Calendar size={12} color="#baff66" />
+                <span>{article.publishedDate || 'October 2026'}</span>
               </span>
             </div>
+
+            <div className="meta-divider-vertical" />
+
+            <div className="meta-item">
+              <span className="meta-label">ESTIMATED STUDY</span>
+              <span className="meta-val mono" style={{ display: 'flex', alignItems: 'center', gap: '5px', color: '#baff66' }}>
+                <Clock size={12} />
+                <span>{article.readTimeMinutes || 12} MIN READ</span>
+              </span>
+            </div>
+
+            {article.tags && article.tags.length > 0 && (
+              <>
+                <div className="meta-divider-vertical" />
+                <div className="research-tags-strip" style={{ marginLeft: 'auto' }}>
+                  {article.tags.map((tag) => (
+                    <span key={tag} className="research-tag-pill">
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              </>
+            )}
           </div>
 
           {/* Interactive Hero Banner / Architectural Diagram */}
@@ -272,7 +413,7 @@ export default function ResearchDetailPage({
                   loading="eager"
                 />
                 <div className="banner-expand-badge mono">
-                  <ArrowUpRight size={13} /> Click to Expand High-Res
+                  <ArrowUpRight size={13} /> Click to Expand High-Res Architecture Topology
                 </div>
               </div>
             ) : (
@@ -287,74 +428,109 @@ export default function ResearchDetailPage({
       </section>
 
       {/* 3. Deep-Dive Body Layout */}
-      <section className="research-article-body">
-        <div className="container article-layout-grid">
-          {/* Main Article Content Column */}
-          <main className="article-content-col">
-            {/* Threat Model Box */}
-            {article.threatModel && typeof article.threatModel === 'object' && (
-              <div className="threat-matrix-card">
-                <div className="matrix-header">
-                  <ShieldCheck size={18} />
-                  <h3>Threat Model & Attack Vector Matrix</h3>
-                </div>
-                <div className="matrix-grid">
-                  {article.threatModel.cvssScore && (
-                    <div className="matrix-item">
-                      <span className="matrix-label">CVSS Base Score</span>
-                      <span className="matrix-val mono severity-high">
-                        {article.threatModel.cvssScore}
-                      </span>
-                    </div>
-                  )}
-                  {article.threatModel.vector && (
-                    <div className="matrix-item">
-                      <span className="matrix-label">Vector String</span>
-                      <span className="matrix-val mono code-val">{article.threatModel.vector}</span>
-                    </div>
-                  )}
-                  {article.threatModel.mitreTactic && (
-                    <div className="matrix-item">
-                      <span className="matrix-label">MITRE ATT&CK</span>
-                      <span className="matrix-val mono">{article.threatModel.mitreTactic}</span>
-                    </div>
-                  )}
-                  {article.threatModel.impact && (
-                    <div className="matrix-item">
-                      <span className="matrix-label">Severity Profile</span>
-                      <span className="matrix-val mono">{article.threatModel.impact}</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* Key Findings Checklist */}
+      <section className="research-body-section">
+        <div className="spec-canvas-container research-layout-centered">
+          <main className="research-article-main">
+            {/* Key Findings Card with High-Contrast Bullets (Fixed Layout) */}
             {article.keyFindings && article.keyFindings.length > 0 && (
-              <div className="key-findings-panel">
-                <h3>Key Security Findings</h3>
-                <div className="findings-list">
-                  {article.keyFindings.map((finding, idx) => (
-                    <div key={idx} className="finding-row">
-                      <CheckCircle2 size={16} className="finding-check-icon" />
-                      <p>{finding}</p>
+              <div className="key-findings-card">
+                <div className="findings-head">
+                  <CheckCircle2 size={19} color="#baff66" />
+                  <h3>Key Security Findings & Threat Intelligence Takeaways</h3>
+                </div>
+                <ul className="findings-list">
+                  {article.keyFindings.map((finding, idx) => {
+                    const colonIdx = finding.indexOf(':');
+                    const hasColon = colonIdx > -1 && colonIdx < 50;
+                    const title = hasColon ? finding.slice(0, colonIdx) : null;
+                    const body = hasColon ? finding.slice(colonIdx + 1).trim() : finding;
+
+                    return (
+                      <li key={idx}>
+                        <CheckCircle2 size={16} color="#baff66" className="bullet-green" />
+                        <div>
+                          {title ? (
+                            <>
+                              <strong style={{ color: '#f8fafc', fontWeight: 600 }}>{title}: </strong>
+                              <span style={{ color: '#cbd5e1' }}>{body}</span>
+                            </>
+                          ) : (
+                            <span style={{ color: '#cbd5e1' }}>{finding}</span>
+                          )}
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            )}
+
+            {/* Threat Modeling & Attack Vector Matrix (Interactive Dossier) */}
+            {article.threatModel && (
+              <div className="threat-framework-card">
+                <div className="framework-head" style={{ justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <ShieldCheck size={18} color="#5be7ef" />
+                    <h4 style={{ margin: 0, fontSize: '12px', fontWeight: 700, color: '#5be7ef', letterSpacing: '0.06em' }}>
+                      THREAT MODELING & ATTACK VECTOR MATRIX
+                    </h4>
+                  </div>
+                  {article.threatModel.framework && (
+                    <span className="framework-pill" style={{ margin: 0, color: '#5be7ef', borderColor: 'rgba(91, 231, 239, 0.3)' }}>
+                      {article.threatModel.framework}
+                    </span>
+                  )}
+                </div>
+
+                <div className="threat-matrix-two-col">
+                  {/* Left: MITRE Techniques */}
+                  {article.threatModel.techniques && article.threatModel.techniques.length > 0 && (
+                    <div className="matrix-col">
+                      <span className="matrix-col-title">EMULATED TECHNIQUES & ATT&CK PRIMITIVES</span>
+                      <ul className="techniques-badge-list">
+                        {article.threatModel.techniques.map((tech, tIdx) => (
+                          <li key={tIdx} className="tech-badge-item">
+                            <span className="tech-accent-dot" />
+                            <span>{tech}</span>
+                          </li>
+                        ))}
+                      </ul>
                     </div>
-                  ))}
+                  )}
+
+                  {/* Right: Telemetry Sources */}
+                  {article.threatModel.telemetrySources && article.threatModel.telemetrySources.length > 0 && (
+                    <div className="matrix-col">
+                      <span className="matrix-col-title">TELEMETRY SOURCES & SENSOR FEEDS</span>
+                      <ul className="telemetry-badge-list">
+                        {article.threatModel.telemetrySources.map((tel, telIdx) => (
+                          <li key={telIdx} className="telemetry-badge-item">
+                            <Activity size={13} color="#5be7ef" style={{ flexShrink: 0 }} />
+                            <code>{tel}</code>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
 
-            {/* Sections / Structured Content */}
+            {/* Structured Sections / Formatted Body */}
             {article.sections && article.sections.length > 0 ? (
               <div className="article-sections-flow">
                 {article.sections.map((sec, idx) => (
-                  <article key={idx} className="article-section-block">
+                  <article key={sec.id || idx} className="article-section-block">
                     <h2>{sec.heading}</h2>
-                    <p className="section-body-text">{sec.body}</p>
+                    {renderFormattedBody(sec.body)}
                     {sec.technicalDetails && (
-                      <div className="technical-deep-dive">
-                        <h4>Technical Architecture</h4>
-                        <p>{sec.technicalDetails}</p>
+                      <div className="technical-deep-dive" style={{ background: 'rgba(10, 15, 22, 0.8)', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: '8px', padding: '16px 20px', marginTop: '16px' }}>
+                        <h4 style={{ margin: '0 0 8px 0', fontSize: '13px', color: '#baff66', fontWeight: 600 }}>
+                          Technical Architecture Detail
+                        </h4>
+                        <p style={{ margin: 0, fontSize: '13px', color: '#94a3b8', lineHeight: 1.6 }}>
+                          {sec.technicalDetails}
+                        </p>
                       </div>
                     )}
                   </article>
@@ -362,29 +538,35 @@ export default function ResearchDetailPage({
               </div>
             ) : article.content ? (
               <div className="article-sections-flow">
-                <div className="section-body-text" style={{ whiteSpace: 'pre-wrap', lineHeight: 1.7 }}>
-                  {article.content}
-                </div>
+                {renderFormattedBody(article.content)}
               </div>
             ) : null}
 
-            {/* Architecture PoC Code Box */}
+            {/* Architecture PoC Code Box in IDE Terminal Window */}
             {article.architecturePoC && (
-              <div className="architecture-poc-panel">
-                <div className="poc-header-row">
-                  <div className="poc-title-group">
-                    <Terminal size={16} />
-                    <span className="mono">VERIFIED POC SPECIFICATION / DETECTION LOGIC</span>
+              <div className="poc-code-wrapper">
+                <div className="poc-code-head">
+                  <div className="poc-head-left">
+                    <span className="poc-window-dots">
+                      <span className="dot dot-red" />
+                      <span className="dot dot-yellow" />
+                      <span className="dot dot-green" />
+                    </span>
+                    <span className="poc-tab-title">
+                      <FileCode size={13} color="#baff66" />
+                      <span>detection-rule.sigma.yaml</span>
+                    </span>
+                    <span className="poc-status-badge mono">SIGMA v1.0 · PRODUCTION SPECIFICATION</span>
                   </div>
                   <CopyButton
                     value={article.architecturePoC}
-                    label="Copy Code"
+                    label="Copy Detection Rule"
                     variant="cyber"
                     size="sm"
                   />
                 </div>
-                <div className="poc-code-wrapper">
-                  <pre className="mono code-pre">
+                <div className="poc-code-body-wrap">
+                  <pre className="poc-code-body mono">
                     <code>{article.architecturePoC}</code>
                   </pre>
                 </div>
@@ -394,7 +576,12 @@ export default function ResearchDetailPage({
             {/* PoC Figures Gallery */}
             {article.pocImages && article.pocImages.length > 0 && (
               <div className="poc-figures-section">
-                <h3 className="subheading-accent">Technical PoC Evidence & Memory Analysis</h3>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
+                  <Terminal size={17} color="#baff66" />
+                  <h3 style={{ margin: 0, fontSize: '17px', color: '#f8fafc', fontWeight: 750 }}>
+                    Technical PoC Evidence & Forensic Telemetry Artifacts
+                  </h3>
+                </div>
                 <div className="poc-figures-grid">
                   {article.pocImages.map((img, i) => (
                     <div
@@ -424,33 +611,66 @@ export default function ResearchDetailPage({
               </div>
             )}
 
-            {/* Remediation Checklist */}
+            {/* Remediation & Hardening Roadmap */}
             {article.remediationChecklist && article.remediationChecklist.length > 0 && (
-              <div className="remediation-checklist-panel">
-                <h3>Recommended Remediation & Hardening</h3>
-                <div className="remediation-grid">
-                  {article.remediationChecklist.map((item, idx) => (
-                    <div key={idx} className="remediation-item">
-                      <div className="remediation-num mono">0{idx + 1}</div>
-                      <div>
-                        <h4>{item.step || item.title || item}</h4>
-                        {item.detail && <p>{item.detail}</p>}
-                      </div>
-                    </div>
-                  ))}
+              <div className="remediation-checklist-card">
+                <div className="checklist-head">
+                  <ShieldCheck size={20} color="#baff66" />
+                  <div>
+                    <h3 style={{ margin: 0, fontSize: '16.5px', fontWeight: 700, color: '#f8fafc' }}>
+                      Recommended Remediation & Detection Roadmap
+                    </h3>
+                    <span style={{ fontSize: '11px', color: '#64748b' }}>
+                      Actionable engineering steps for blue teams and SecOps pipelines
+                    </span>
+                  </div>
                 </div>
+                <ul className="checklist-items">
+                  {article.remediationChecklist.map((item, idx) => {
+                    const text = typeof item === 'object' ? (item.step || item.title || item.detail) : item;
+                    const colonIdx = text.indexOf(':');
+                    const hasColon = colonIdx > -1 && colonIdx < 50;
+                    const lead = hasColon ? text.slice(0, colonIdx) : null;
+                    const rest = hasColon ? text.slice(colonIdx + 1).trim() : text;
+
+                    return (
+                      <li key={idx}>
+                        <span className="step-counter">0{idx + 1}</span>
+                        <div>
+                          {lead ? (
+                            <>
+                              <strong style={{ color: '#f8fafc', fontWeight: 600 }}>{lead}: </strong>
+                              <span style={{ color: '#cbd5e1' }}>{rest}</span>
+                            </>
+                          ) : (
+                            <span>{text}</span>
+                          )}
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ul>
               </div>
             )}
 
-            {/* Author Attribution Card */}
+            {/* Author Attribution Dossier Card */}
             <div className="article-author-card">
               <div className="author-avatar-wrap">
-                <UserCheck size={28} />
+                <UserCheck size={26} color="#baff66" />
               </div>
               <div className="author-info">
-                <h3>{article.authorName || 'NexGuard Research Team'}</h3>
-                <span className="author-role mono">{article.authorRole || 'Security Researcher'}</span>
-                <p>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                  <h3 style={{ margin: 0, fontSize: '15px', color: '#f8fafc', fontWeight: 700 }}>
+                    {article.authorName || 'NexGuard Research Team'}
+                  </h3>
+                  <span className="verified-writer-pill">
+                    <Check size={11} /> VERIFIED INVESTIGATOR
+                  </span>
+                </div>
+                <span className="author-role mono" style={{ color: '#94a3b8', fontSize: '11px', display: 'block', marginBottom: '8px' }}>
+                  {article.authorRole || 'Lead Security Researcher'}
+                </span>
+                <p style={{ margin: 0, fontSize: '12.5px', color: '#94a3b8', lineHeight: 1.6 }}>
                   Conducting offensive capability research, low-level hypervisor escape vectors, and automated zero-trust telemetry engineering at NexGuard Security Labs.
                 </p>
               </div>
@@ -459,8 +679,10 @@ export default function ResearchDetailPage({
                   type="button"
                   className="btn btn-secondary btn-sm"
                   onClick={() => onContact && onContact(article.title)}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', whiteSpace: 'nowrap' }}
                 >
-                  Request Technical Review <ArrowUpRight size={14} />
+                  <span>Consult Lead Researcher</span>
+                  <ArrowUpRight size={14} />
                 </button>
               </div>
             </div>
@@ -505,15 +727,15 @@ export default function ResearchDetailPage({
 
       {/* 4. Bottom Scoping CTA Banner */}
       <section className="research-bottom-cta-section">
-        <div className="container">
+        <div className="spec-canvas-container">
           <div className="research-cta-banner">
             <div>
-              <span className="eyebrow">
-                <span className="eyebrow-line" /> COLLABORATIVE DEFENSE
+              <span className="eyebrow" style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#baff66', fontSize: '11px', fontWeight: 700, letterSpacing: '0.06em' }}>
+                <ShieldCheck size={14} /> COLLABORATIVE DEFENSE & RESEARCH INQUIRIES
               </span>
-              <h2>Have inquiries regarding this research?</h2>
+              <h2>Have technical inquiries regarding this research?</h2>
               <p>
-                Speak with our threat intelligence and red-team practitioners. We provide scoped detection engineering engagements and purple team validations.
+                Speak directly with our threat intelligence and red-team practitioners. We provide scoped detection engineering engagements, purple team validations, and bespoke adversarial simulations.
               </p>
             </div>
             <div className="banner-actions">
@@ -521,15 +743,17 @@ export default function ResearchDetailPage({
                 type="button"
                 className="btn btn-primary"
                 onClick={() => onContact && onContact(article.title)}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', whiteSpace: 'nowrap' }}
               >
-                Initiate Scoping Inquiry <ArrowUpRight size={15} />
+                <span>Initiate Technical Scoping</span>
+                <ArrowUpRight size={15} />
               </button>
               <button
                 type="button"
-                className="btn btn-ghost"
+                className="btn btn-secondary"
                 onClick={onBack}
               >
-                Back to All Articles
+                <span>All Research Publications</span>
               </button>
             </div>
           </div>
@@ -539,53 +763,56 @@ export default function ResearchDetailPage({
       {/* 5. Connected Research Publications Grid */}
       {livePapersList.length > 1 && (
         <section className="related-research-section">
-          <div className="container">
-            <div className="section-heading">
+          <div className="spec-canvas-container">
+            <div className="section-heading" style={{ marginBottom: '32px' }}>
               <div>
-                <div className="eyebrow">
-                  <span className="eyebrow-line" /> CONTINUOUS RESEARCH
+                <div className="eyebrow" style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#baff66', fontSize: '11px', fontWeight: 700 }}>
+                  <Terminal size={14} /> CONTINUOUS SECURITY LAB RESEARCH
                 </div>
-                <h2>Explore Connected Investigations</h2>
+                <h2 style={{ fontSize: 'clamp(1.8rem, 2.4vw, 2.2rem)', fontWeight: 750, color: '#f8fafc', margin: '8px 0 10px' }}>
+                  Explore Connected Investigations
+                </h2>
               </div>
-              <p>
-                Explore our laboratory investigations into offensive techniques, LLM robustness, and resilient architectures.
+              <p style={{ color: '#94a3b8', fontSize: '13.5px', maxWidth: '640px', lineHeight: 1.6 }}>
+                Explore our laboratory investigations into offensive techniques, LLM robustness, kernel security, and resilient cyber architectures.
               </p>
             </div>
 
-            <div className="project-grid">
+            <div className="project-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '20px' }}>
               {livePapersList
                 .filter((p) => p.slug !== article.slug)
+                .slice(0, 3)
                 .map((p, idx) => {
                   const OtherIcon = iconMap[p.slug] || Terminal;
                   return (
                     <article
                       key={p.slug || idx}
                       className="project-card project-card-interactive"
-                      onClick={() => {
-                        window.location.hash = `#research/${p.slug}`;
-                      }}
+                      onClick={() => handleNavigateToPaper(p.slug)}
                       role="button"
                       tabIndex={0}
                     >
                       <div className="project-top">
                         <div className="project-icon">
-                          <OtherIcon size={21} />
+                          <OtherIcon size={20} />
                         </div>
-                        <span>0{idx + 1} / RESEARCH</span>
-                        <ArrowUpRight size={16} />
+                        <span style={{ fontSize: '10px', fontFamily: 'var(--mono)', color: '#64748b' }}>
+                          0{idx + 1} / RESEARCH
+                        </span>
+                        <ArrowUpRight size={15} style={{ marginLeft: 'auto', color: '#94a3b8' }} />
                       </div>
                       <span className="project-label">{p.category || 'CYBER RESEARCH'}</span>
                       <h3>{p.title}</h3>
                       <p>{p.summary}</p>
                       {p.tags && p.tags.length > 0 && (
                         <div className="project-stack">
-                          {p.tags.map((t) => (
+                          {p.tags.slice(0, 3).map((t) => (
                             <span key={t}>{t}</span>
                           ))}
                         </div>
                       )}
-                      <span className="card-link" style={{ marginTop: 'auto', paddingTop: '12px' }}>
-                        Read paper <ArrowUpRight size={14} />
+                      <span className="card-link" style={{ marginTop: 'auto', paddingTop: '12px', display: 'inline-flex', alignItems: 'center', gap: '5px', color: '#baff66', fontSize: '12px', fontWeight: 600 }}>
+                        Read whitepaper <ArrowUpRight size={13} />
                       </span>
                     </article>
                   );
