@@ -22,13 +22,21 @@ import {
   AlertCircle,
   RefreshCw,
   Heart,
-  ShoppingCart
+  ShoppingCart,
+  Check,
+  Cpu,
+  Server,
+  FileCheck2,
+  Sparkles,
+  Users,
+  Compass
 } from 'lucide-react';
 import { apiRequest } from '../../api/client.js';
 import { Badge } from '../ui/badge.jsx';
 import { Button } from '../ui/button.jsx';
 import { Tabs } from '../ui/tabs.jsx';
 import { useWishlistCart } from '../../context/WishlistCartContext.jsx';
+import { LEARNING_DETAILS } from '../../data/learningDetails.js';
 
 const iconMap = {
   'cyber-foundations': ShieldCheck,
@@ -47,7 +55,6 @@ export default function CourseDetailPage({
 }) {
   const { isInWishlist, toggleWishlist, isInCart, addToCart, setIsCartOpen } = useWishlistCart();
   const [activeTab, setActiveTab] = useState('overview'); // 'overview' | 'syllabus' | 'labs' | 'tools' | 'capstone'
-
   const [expandedModule, setExpandedModule] = useState('mod-1');
   const [copied, setCopied] = useState(false);
   const [track, setTrack] = useState(null);
@@ -64,16 +71,40 @@ export default function CourseDetailPage({
     setLoading(true);
     setError(null);
 
+    const fallbackTrack = LEARNING_DETAILS[courseSlug] || null;
+
     apiRequest(`/courses/${courseSlug}`)
       .then((data) => {
-        if (data?.course) {
-          setTrack(data.course);
+        const remoteCourse = data?.course || {};
+        if (remoteCourse.title || fallbackTrack) {
+          const merged = {
+            ...(fallbackTrack || {}),
+            ...remoteCourse,
+            overview: {
+              ...(fallbackTrack?.overview || {}),
+              ...(remoteCourse.overview || {})
+            },
+            modules: (remoteCourse.modules && remoteCourse.modules.length > 0)
+              ? remoteCourse.modules
+              : (fallbackTrack?.modules || []),
+            tools: (remoteCourse.tools && remoteCourse.tools.length > 0)
+              ? remoteCourse.tools
+              : (fallbackTrack?.tools || []),
+            capstone: remoteCourse.capstone || fallbackTrack?.capstone || null,
+            targetAudience: remoteCourse.targetAudience || fallbackTrack?.targetAudience || null,
+            prerequisites: remoteCourse.prerequisites || fallbackTrack?.prerequisites || null
+          };
+          setTrack(merged);
         } else {
           setError('Course curriculum not found in database.');
         }
       })
       .catch((err) => {
-        setError(err.message || 'Unable to connect to course database.');
+        if (fallbackTrack) {
+          setTrack(fallbackTrack);
+        } else {
+          setError(err.message || 'Unable to connect to course database.');
+        }
       })
       .finally(() => {
         setLoading(false);
@@ -83,11 +114,15 @@ export default function CourseDetailPage({
   useEffect(() => {
     apiRequest('/courses')
       .then((data) => {
-        if (data?.courses && Array.isArray(data.courses)) {
+        if (data?.courses && Array.isArray(data.courses) && data.courses.length > 0) {
           setAllTracks(data.courses);
+        } else {
+          setAllTracks(Object.values(LEARNING_DETAILS));
         }
       })
-      .catch(() => {});
+      .catch(() => {
+        setAllTracks(Object.values(LEARNING_DETAILS));
+      });
   }, []);
 
   const handleShare = () => {
@@ -100,13 +135,13 @@ export default function CourseDetailPage({
 
   if (loading) {
     return (
-      <div className="service-detail-root course-detail-root" style={{ minHeight: '80vh', padding: '120px 20px' }}>
-        <div className="container" style={{ maxWidth: '900px' }}>
-          <div className="skeleton-line" style={{ width: '220px', height: '24px', marginBottom: '32px' }} />
-          <div className="skeleton-line" style={{ width: '85%', height: '48px', marginBottom: '20px' }} />
-          <div className="skeleton-line" style={{ width: '100%', height: '20px', marginBottom: '12px' }} />
-          <div className="skeleton-line" style={{ width: '90%', height: '20px', marginBottom: '36px' }} />
-          <div className="skeleton-line" style={{ width: '100%', height: '350px' }} />
+      <div className="enterprise-spec-root academy-spec-root" style={{ minHeight: '80vh', padding: '100px 0' }}>
+        <div className="spec-canvas-container" style={{ maxWidth: '900px' }}>
+          <div className="skeleton-line" style={{ width: '220px', height: '20px', marginBottom: '28px' }} />
+          <div className="skeleton-line" style={{ width: '80%', height: '42px', marginBottom: '18px' }} />
+          <div className="skeleton-line" style={{ width: '100%', height: '18px', marginBottom: '12px' }} />
+          <div className="skeleton-line" style={{ width: '88%', height: '18px', marginBottom: '32px' }} />
+          <div className="skeleton-line" style={{ width: '100%', height: '320px', borderRadius: '10px' }} />
         </div>
       </div>
     );
@@ -114,24 +149,24 @@ export default function CourseDetailPage({
 
   if (error || !track) {
     return (
-      <div className="service-detail-root course-detail-root" style={{ minHeight: '80vh', padding: '120px 20px' }}>
-        <div className="container" style={{ maxWidth: '700px', textAlign: 'center' }}>
-          <div className="content-error-panel" style={{ flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
-            <AlertCircle size={36} className="error-icon" style={{ marginBottom: '16px' }} />
+      <div className="enterprise-spec-root academy-spec-root" style={{ minHeight: '80vh', padding: '100px 0' }}>
+        <div className="spec-canvas-container" style={{ maxWidth: '640px', textAlign: 'center' }}>
+          <div className="scoping-success-card" style={{ borderColor: 'rgba(255, 77, 109, 0.4)', background: 'rgba(255, 77, 109, 0.08)' }}>
+            <AlertCircle size={36} color="#ff4d6d" style={{ marginBottom: '8px' }} />
             <h3>Curriculum Specification Not Found</h3>
-            <p style={{ maxWidth: '500px', margin: '0 auto 24px' }}>
+            <p style={{ maxWidth: '480px', margin: '0 auto 20px', color: '#cbd5e1' }}>
               {error || `No published learning track exists matching slug: "${courseSlug}".`}
             </p>
-            <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
-              <button type="button" className="btn btn-secondary" onClick={onBack}>
-                <ArrowLeft size={15} /> All Learning Tracks
+            <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
+              <button type="button" className="spec-hero-secondary-btn" onClick={onBack}>
+                <ArrowLeft size={14} /> All Learning Tracks
               </button>
               <button
                 type="button"
-                className="btn btn-primary"
+                className="spec-hero-cta-btn"
                 onClick={() => window.location.reload()}
               >
-                <RefreshCw size={14} /> Reload
+                <RefreshCw size={13} /> Reload
               </button>
             </div>
           </div>
@@ -142,58 +177,97 @@ export default function CourseDetailPage({
 
   const TrackIcon = iconMap[track.slug] || BookOpen;
   const modules = track.modules || [];
-  const labs = track.labs || [];
+  
+  // Extract virtual labs if not explicitly defined
+  const labs = (track.labs && track.labs.length > 0)
+    ? track.labs
+    : modules
+        .filter((m) => m.labExercise)
+        .map((m, idx) => ({
+          title: typeof m.labExercise === 'object' ? m.labExercise.title : `Lab: ${m.title}`,
+          objective: typeof m.labExercise === 'object' ? m.labExercise.description : (m.summary || m.labExercise),
+          difficulty: track.level || 'Intermediate',
+          tools: m.topics?.slice(0, 3) || track.tools?.slice(0, 3) || ['Virtual Sandbox CLI']
+        }));
+
   const tools = track.tools || [];
   const capstone = track.capstone || track.capstoneProject || null;
   const overview = track.overview || {};
+  const philosophyText = overview.philosophy || overview.description || track.summary;
+  const highlights = overview.highlights || [
+    'Verifiable hands-on lab sandbox simulations on isolated targets',
+    'Real-world offensive & defensive toolchains and frameworks',
+    'Interactive knowledge check quizzes with instant remediation hints',
+    'Verified completion certificate with cryptographic hash validation'
+  ];
+
+  const trackPrice = track.price || 199;
+  const trackCartItem = {
+    id: track.slug,
+    slug: track.slug,
+    title: track.title,
+    level: track.level,
+    duration: track.duration,
+    category: track.category || 'ACADEMY',
+    price: trackPrice,
+    type: 'course'
+  };
 
   const tabsConfig = [
     { id: 'overview', label: 'Track Overview' },
     { id: 'syllabus', label: `Syllabus (${modules.length} Modules)` },
-    { id: 'labs', label: `Hands-on Labs (${labs.length || track.labsCount || 0})` },
-    { id: 'tools', label: 'Tools & Ecosystem' },
+    { id: 'labs', label: `Virtual Labs (${labs.length})` },
+    { id: 'tools', label: `Tools (${tools.length})` },
     { id: 'capstone', label: 'Capstone & Certification' }
   ];
 
   return (
-    <div className="service-detail-root course-detail-root">
-      {/* 1. Sticky Navigation Header */}
-      <header className="service-detail-header">
-        <div className="container service-detail-header-inner">
-          <div className="service-header-left">
+    <div className="enterprise-spec-root academy-spec-root">
+      {/* Ambient Cyber Lighting Backdrops */}
+      <div className="spec-ambient-glow glow-1" />
+      <div className="spec-ambient-glow glow-2" />
+      <div className="spec-cyber-grid-overlay" />
+
+      {/* 1. Sticky Navigation Sub-Bar */}
+      <header className="spec-sticky-navbar">
+        <div className="spec-canvas-container spec-navbar-inner">
+          <div className="spec-nav-breadcrumbs">
             <button
               type="button"
-              className="btn-back-services"
+              className="spec-nav-back-btn"
               onClick={onBack}
-              title="Return to all Academy learning tracks"
+              title="Return to Academy catalog"
             >
-              <ArrowLeft size={15} />
-              <span>All Tracks</span>
+              <ArrowLeft size={13} />
+              <span>Catalog</span>
             </button>
-            <span className="header-divider">/</span>
-            <span className="header-category-tag">{track.category}</span>
-            <span className="header-divider">/</span>
-            <span className="header-current-title">{track.title}</span>
+            <span className="spec-breadcrumb-slash">/</span>
+            <span className="spec-breadcrumb-tag">{track.category || 'ACADEMY'}</span>
+            <span className="spec-breadcrumb-slash">/</span>
+            <span className="spec-breadcrumb-title">{track.title}</span>
           </div>
 
-          <div className="service-header-right">
+          <nav className="spec-nav-jump-links" aria-label="Curriculum Navigation">
+            <button type="button" onClick={() => setActiveTab('overview')}>Overview</button>
+            <button type="button" onClick={() => setActiveTab('syllabus')}>Syllabus</button>
+            <button type="button" onClick={() => setActiveTab('labs')}>Labs ({labs.length})</button>
+            <button type="button" onClick={() => setActiveTab('tools')}>Tools</button>
+            <button type="button" onClick={() => setActiveTab('capstone')}>Certification</button>
+          </nav>
+
+          <div className="spec-nav-cta-group">
             <button
               type="button"
-              className={`btn-spec-wishlist ${isInWishlist(track.slug) ? 'active' : ''}`}
-              onClick={() => toggleWishlist({
-                id: track.slug,
-                slug: track.slug,
-                title: track.title,
-                level: track.level,
-                duration: track.duration,
-                category: track.category || 'ACADEMY',
-                price: track.price || 199,
-                type: 'course'
-              })}
-              title={isInWishlist(track.slug) ? "Remove from wishlist" : "Save to wishlist"}
+              className={`spec-share-btn ${isInWishlist(track.slug) ? 'active' : ''}`}
+              onClick={() => toggleWishlist(trackCartItem)}
+              title={isInWishlist(track.slug) ? 'Remove from wishlist' : 'Save to wishlist'}
+              style={{
+                color: isInWishlist(track.slug) ? '#ff4d6d' : undefined,
+                borderColor: isInWishlist(track.slug) ? 'rgba(255, 77, 109, 0.4)' : undefined
+              }}
             >
               <Heart
-                size={14}
+                size={13}
                 fill={isInWishlist(track.slug) ? '#ff4d6d' : 'none'}
                 stroke={isInWishlist(track.slug) ? '#ff4d6d' : 'currentColor'}
               />
@@ -202,165 +276,208 @@ export default function CourseDetailPage({
 
             <button
               type="button"
-              className={`btn-spec-cart ${isInCart(track.slug) ? 'active' : ''}`}
-              onClick={() => {
-                if (isInCart(track.slug)) {
-                  setIsCartOpen(true);
-                } else {
-                  addToCart({
-                    id: track.slug,
-                    slug: track.slug,
-                    title: track.title,
-                    level: track.level,
-                    duration: track.duration,
-                    category: track.category || 'ACADEMY',
-                    price: track.price || 199,
-                    type: 'course'
-                  });
-                }
-              }}
-              title="Add track to enrollment cart"
+              className="spec-share-btn"
+              onClick={handleShare}
+              title="Copy direct curriculum link"
             >
-              <ShoppingCart size={14} />
-              <span>{isInCart(track.slug) ? 'In Cart' : 'Enroll ($199)'}</span>
+              {copied ? <Check size={13} color="#baff66" /> : <Share2 size={13} />}
+              <span>{copied ? 'Copied' : 'Share'}</span>
             </button>
 
             <button
               type="button"
-              className="btn-share-spec"
-              onClick={handleShare}
-              title="Copy direct link to this curriculum specification"
+              className="spec-primary-action-btn"
+              onClick={() => {
+                if (isInCart(track.slug)) {
+                  setIsCartOpen(true);
+                } else {
+                  addToCart(trackCartItem);
+                }
+              }}
             >
-              <Share2 size={14} />
-              <span>{copied ? 'Link Copied!' : 'Share'}</span>
+              <ShoppingCart size={13} />
+              <span>{isInCart(track.slug) ? 'In Cart' : `Enroll ($${trackPrice})`}</span>
             </button>
           </div>
         </div>
       </header>
 
-      {/* 2. Hero Header Section */}
-      <section className="service-hero-section">
-        <div className="container">
-          <div className="service-hero-grid">
-            <div className="service-hero-main">
-              <div className="service-hero-eyebrow">
-                <span className="eyebrow-accent-dot" />
-                <span>NEXGUARD ACADEMY</span>
-                <span className="eyebrow-slash">·</span>
-                <span>{track.category}</span>
-                <span className="eyebrow-slash">·</span>
-                <span className="mono">{track.level} LEVEL</span>
+      {/* 2. Executive Hero Stage */}
+      <section className="spec-hero-stage">
+        <div className="spec-canvas-container spec-hero-grid">
+          {/* Left Column: Title, Metadata, Stats, Action CTAs */}
+          <div className="spec-hero-left">
+            <div className="spec-meta-pills-row">
+              <span className="spec-code-tag">ACADEMY-TRK</span>
+              <span className="spec-category-tag">{track.category || 'CYBER ENGINEERING'}</span>
+              <span className="spec-status-beacon">
+                <span className="beacon-pulse" />
+                {track.level?.toUpperCase() || 'INTERMEDIATE'} LEVEL
+              </span>
+            </div>
+
+            <h1 className="spec-hero-main-title">{track.title}</h1>
+            
+            {track.heroSubtitle && (
+              <p className="spec-hero-tagline-text">{track.heroSubtitle}</p>
+            )}
+
+            <p className="spec-hero-lead-summary">{track.summary}</p>
+
+            {/* 4-Stat Curriculum Metric Bar */}
+            <div className="spec-stats-bar">
+              <div className="spec-stat-item">
+                <span className="stat-value">{track.duration || 'Self-Paced'}</span>
+                <span className="stat-label">Estimated Timeline</span>
               </div>
-
-              <h1 className="service-hero-title">{track.title}</h1>
-              {track.heroSubtitle && (
-                <p className="service-hero-tagline">{track.heroSubtitle}</p>
-              )}
-              <p className="service-hero-summary">{track.summary}</p>
-
-              <div className="service-hero-ctas">
-                <Button
-                  variant="primary"
-                  size="md"
-                  onClick={() => {
-                    addToCart({
-                      id: track.slug,
-                      slug: track.slug,
-                      title: track.title,
-                      level: track.level,
-                      duration: track.duration,
-                      category: track.category || 'ACADEMY',
-                      price: track.price || 199,
-                      type: 'course'
-                    });
-                  }}
-                >
-                  <ShoppingCart size={16} />
-                  <span>{isInCart(track.slug) ? 'View in Cart ($199)' : 'Enroll in Track · $199'}</span>
-                </Button>
-
-                <button
-                  type="button"
-                  className={`btn btn-secondary ${isInWishlist(track.slug) ? 'btn-wishlist-active' : ''}`}
-                  onClick={() => toggleWishlist({
-                    id: track.slug,
-                    slug: track.slug,
-                    title: track.title,
-                    level: track.level,
-                    duration: track.duration,
-                    category: track.category || 'ACADEMY',
-                    price: track.price || 199,
-                    type: 'course'
-                  })}
-                >
-                  <Heart
-                    size={15}
-                    fill={isInWishlist(track.slug) ? '#ff4d6d' : 'none'}
-                    stroke={isInWishlist(track.slug) ? '#ff4d6d' : 'currentColor'}
-                  />
-                  <span>{isInWishlist(track.slug) ? 'Saved in Wishlist' : 'Add to Wishlist'}</span>
-                </button>
-
-                <button
-                  type="button"
-                  className="btn btn-ghost"
-                  onClick={() => onInquireCohort && onInquireCohort(track.title)}
-                >
-                  Inquire Team Cohort <ArrowUpRight size={14} />
-                </button>
+              <div className="spec-stat-divider" />
+              <div className="spec-stat-item">
+                <span className="stat-value">{modules.length || 4} Deep Modules</span>
+                <span className="stat-label">Structured Syllabus</span>
+              </div>
+              <div className="spec-stat-divider" />
+              <div className="spec-stat-item">
+                <span className="stat-value">{labs.length} Virtual Sandboxes</span>
+                <span className="stat-label">Hands-on CLI Labs</span>
+              </div>
+              <div className="spec-stat-divider" />
+              <div className="spec-stat-item">
+                <span className="stat-value" style={{ color: '#baff66' }}>Verified Credential</span>
+                <span className="stat-label">Certification Lab</span>
               </div>
             </div>
 
-            {/* Quick Curriculum Specs Card */}
-            <div className="service-hero-card">
-              <div className="spec-card-header">
-                <TrackIcon size={24} />
-                <span>CURRICULUM SPECIFICATIONS</span>
-              </div>
-              <div className="spec-card-body">
-                <div className="spec-row">
-                  <span className="spec-label">Skill Level</span>
-                  <span className="spec-val mono">
-                    <Badge variant="cyber">{track.level}</Badge>
-                  </span>
+            {/* Hero CTAs */}
+            <div className="spec-hero-action-buttons">
+              <Button
+                variant="primary"
+                size="md"
+                className="spec-hero-cta-btn"
+                onClick={() => {
+                  if (isInCart(track.slug)) {
+                    setIsCartOpen(true);
+                  } else {
+                    addToCart(trackCartItem);
+                  }
+                }}
+              >
+                <ShoppingCart size={14} />
+                <span>{isInCart(track.slug) ? 'View in Cart · $199' : `Enroll in Track · $${trackPrice}`}</span>
+              </Button>
+
+              <button
+                type="button"
+                className="spec-hero-secondary-btn"
+                style={{
+                  color: isInWishlist(track.slug) ? '#ff4d6d' : undefined,
+                  borderColor: isInWishlist(track.slug) ? 'rgba(255, 77, 109, 0.4)' : undefined
+                }}
+                onClick={() => toggleWishlist(trackCartItem)}
+              >
+                <Heart
+                  size={14}
+                  fill={isInWishlist(track.slug) ? '#ff4d6d' : 'none'}
+                  stroke={isInWishlist(track.slug) ? '#ff4d6d' : 'currentColor'}
+                />
+                <span>{isInWishlist(track.slug) ? 'Saved in Wishlist' : 'Add to Wishlist'}</span>
+              </button>
+
+              <button
+                type="button"
+                className="spec-hero-secondary-btn"
+                onClick={() => onInquireCohort && onInquireCohort(track.title)}
+                title="Request team training cohort"
+              >
+                <span>Team Cohort</span>
+                <ArrowUpRight size={13} />
+              </button>
+            </div>
+          </div>
+
+          {/* Right Column: Curriculum Specification Matrix Card */}
+          <div className="spec-hero-right">
+            <div className="spec-profile-card">
+              <div className="profile-card-top">
+                <div className="profile-icon-halo">
+                  <TrackIcon size={20} />
                 </div>
-                <div className="spec-row">
-                  <span className="spec-label">Estimated Duration</span>
-                  <span className="spec-val mono">{track.duration || 'Self-paced'}</span>
-                </div>
-                <div className="spec-row">
-                  <span className="spec-label">Curriculum Depth</span>
-                  <span className="spec-val mono">
-                    {modules.length || track.modulesCount || 4} Modules · {labs.length || track.labsCount || 3} Virtual Labs
-                  </span>
-                </div>
-                <div className="spec-row">
-                  <span className="spec-label">Capstone Lab</span>
-                  <span className="spec-val mono">
-                    {capstone ? 'Verified Certification Lab' : 'Standard Assessment'}
-                  </span>
+                <div>
+                  <h3 className="profile-card-heading">CURRICULUM SPECIFICATION</h3>
+                  <span className="profile-card-subheading">GOV & ENTERPRISE ACCREDITED</span>
                 </div>
               </div>
 
-              {overview.highlights && overview.highlights.length > 0 && (
-                <div className="spec-card-bullets">
-                  {overview.highlights.map((h, i) => (
-                    <div key={i} className="spec-bullet-item">
-                      <CheckCircle2 size={13} />
-                      <span>{h}</span>
+              <div className="profile-spec-rows">
+                <div className="profile-spec-row">
+                  <span className="row-label">Skill Tier</span>
+                  <span className="row-value">{track.level || 'Intermediate'}</span>
+                </div>
+                <div className="profile-spec-row">
+                  <span className="row-label">Estimated Effort</span>
+                  <span className="row-value">{track.duration || '5 Weeks (10 hrs/wk)'}</span>
+                </div>
+                <div className="profile-spec-row">
+                  <span className="row-label">Lab Delivery</span>
+                  <span className="row-value">{labs.length} Browser Sandbox Environments</span>
+                </div>
+                <div className="profile-spec-row">
+                  <span className="row-label">Evaluation Mode</span>
+                  <span className="row-value">{capstone ? 'Independent Capstone PoC' : 'Practical Examination'}</span>
+                </div>
+                <div className="profile-spec-row">
+                  <span className="row-label">Access Model</span>
+                  <span className="row-value">Lifetime Updates + Community</span>
+                </div>
+              </div>
+
+              {/* Verified Learning Guarantees */}
+              <div className="profile-card-deliverables-box">
+                <span className="deliverables-box-title">VERIFIED TRACK OUTCOMES:</span>
+                <div className="deliverables-checklist">
+                  {highlights.slice(0, 3).map((item, idx) => (
+                    <div key={idx} className="deliv-check-item">
+                      <CheckCircle2 size={13} color="#baff66" style={{ flexShrink: 0, marginTop: '2px' }} />
+                      <span>{item}</span>
                     </div>
                   ))}
                 </div>
-              )}
+              </div>
+
+              <button
+                type="button"
+                className="profile-card-book-btn"
+                onClick={() => {
+                  if (isInCart(track.slug)) {
+                    setIsCartOpen(true);
+                  } else {
+                    addToCart(trackCartItem);
+                  }
+                }}
+              >
+                <ShoppingCart size={13} />
+                <span>{isInCart(track.slug) ? 'View Cart to Checkout' : `Enroll Now · $${trackPrice}`}</span>
+              </button>
             </div>
           </div>
         </div>
       </section>
 
-      {/* 3. Tabbed Curriculum Explorer */}
-      <section className="service-spec-section" id="curriculum-details">
-        <div className="container">
-          <div className="academy-spec-tabs-header">
+      {/* 3. Interactive Curriculum Explorer (Tabbed) */}
+      <section className="spec-section-wrapper" id="curriculum-explorer">
+        <div className="spec-canvas-container">
+          <div className="spec-section-header">
+            <div className="sec-eyebrow">
+              <Compass size={13} />
+              <span>SYLLABUS & LABORATORY MATRIX</span>
+            </div>
+            <h2>Comprehensive Technical Curriculum</h2>
+            <p>
+              Inspect the objective-driven modules, hands-on virtual sandbox environments, industry tooling ecosystem, and capstone certification requirements.
+            </p>
+          </div>
+
+          {/* Segmented Tab Navigation Bar */}
+          <div style={{ marginBottom: '28px' }}>
             <Tabs
               tabs={tabsConfig}
               activeTab={activeTab}
@@ -369,160 +486,290 @@ export default function CourseDetailPage({
             />
           </div>
 
-          <div className="spec-tab-content-area">
-            {/* TAB: OVERVIEW */}
+          {/* Tab Panes */}
+          <div className="spec-tab-pane-container">
+            {/* TAB 1: OVERVIEW */}
             {activeTab === 'overview' && (
-              <div className="tab-pane tab-overview">
-                {overview.description && (
-                  <div className="threat-context-card">
-                    <div className="threat-context-header">
-                      <BookOpen size={18} />
-                      <h3>Track Objectives & Target Competencies</h3>
+              <div className="spec-tab-content-fade">
+                {/* Track Philosophy & Objectives Card */}
+                <div className="threat-context-wide-card" style={{ marginBottom: '24px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
+                    <BookOpen size={16} color="#baff66" />
+                    <span style={{ fontSize: '11px', fontWeight: 700, color: '#baff66', letterSpacing: '0.05em' }}>
+                      TRACK OBJECTIVES & LEARNING PHILOSOPHY
+                    </span>
+                  </div>
+                  <p className="threat-context-lead-text">{philosophyText}</p>
+
+                  <div className="threat-framework-pills">
+                    {highlights.map((hl, hIdx) => (
+                      <span key={hIdx} className="framework-pill">
+                        {hl}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Target Audience & Prerequisites Split Grid */}
+                <div className="pillars-enterprise-grid">
+                  <div className="pillar-enterprise-card">
+                    <div className="pillar-card-top-bar">
+                      <span className="pillar-num-badge">AUDIENCE</span>
+                      <Users size={16} color="#baff66" />
                     </div>
-                    <p>{overview.description}</p>
+                    <h3>Target Audience</h3>
+                    <p className="pillar-lead-desc">
+                      Engineered for practitioners who require verifiable offensive and defensive capabilities:
+                    </p>
+                    <div className="pillar-checklist-section">
+                      <ul>
+                        {(track.targetAudience ? [track.targetAudience] : [
+                          'Security Analysts & SOC Engineers seeking hands-on adversary tradecraft',
+                          'Software Engineers & DevOps Teams hardening production cloud pipelines',
+                          'Security Consultants conducting comprehensive offensive assessments'
+                        ]).map((aud, aIdx) => (
+                          <li key={aIdx}>
+                            <CheckCircle2 size={13} color="#baff66" style={{ flexShrink: 0, marginTop: '2px' }} />
+                            <span>{aud}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
                   </div>
-                )}
 
-                <div className="course-overview-split-grid">
-                  <div className="overview-subcard">
-                    <h4 className="mono-label">TARGET AUDIENCE</h4>
-                    <ul>
-                      {(track.targetAudience || overview.targetAudience || [
-                        'Security Analysts & SOC Engineers',
-                        'Software Developers seeking practical AppSec mastery',
-                        'System Administrators transitioning to Defensive Security'
-                      ]).map((aud, aIdx) => (
-                        <li key={aIdx}>
-                          <CheckCircle2 size={14} />
-                          <span>{aud}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-
-                  <div className="overview-subcard">
-                    <h4 className="mono-label">PREREQUISITES</h4>
-                    <ul>
-                      {(track.prerequisites || overview.prerequisites || [
-                        'Basic networking principles (TCP/IP, DNS, HTTP)',
-                        'Familiarity with CLI environments (Linux / Terminal)',
-                        'A dedicated web browser for remote sandbox access'
-                      ]).map((pre, pIdx) => (
-                        <li key={pIdx}>
-                          <ChevronRight size={14} />
-                          <span>{pre}</span>
-                        </li>
-                      ))}
-                    </ul>
+                  <div className="pillar-enterprise-card">
+                    <div className="pillar-card-top-bar">
+                      <span className="pillar-num-badge">REQUIREMENTS</span>
+                      <Cpu size={16} color="#baff66" />
+                    </div>
+                    <h3>Prerequisites & Environment</h3>
+                    <p className="pillar-lead-desc">
+                      Foundational knowledge recommended to maximize learning velocity in this track:
+                    </p>
+                    <div className="pillar-checklist-section">
+                      <ul>
+                        {(Array.isArray(track.prerequisites) ? track.prerequisites : [
+                          'Basic networking fundamentals (TCP/IP, HTTP headers, DNS queries)',
+                          'Familiarity with CLI environments and basic scripting (Python or Bash)',
+                          'Standard modern web browser for remote virtual sandbox streaming'
+                        ]).map((pre, pIdx) => (
+                          <li key={pIdx}>
+                            <ChevronRight size={13} color="#baff66" style={{ flexShrink: 0, marginTop: '2px' }} />
+                            <span>{pre}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
                   </div>
                 </div>
               </div>
             )}
 
-            {/* TAB: SYLLABUS */}
+            {/* TAB 2: SYLLABUS */}
             {activeTab === 'syllabus' && (
-              <div className="tab-pane tab-syllabus">
-                <div className="syllabus-modules-flow">
-                  {modules.map((mod, mIdx) => {
-                    const modId = mod.id || `mod-${mIdx + 1}`;
-                    const isExpanded = expandedModule === modId;
+              <div className="spec-tab-content-fade" style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                {modules.map((mod, mIdx) => {
+                  const modId = mod.id || `mod-${mIdx + 1}`;
+                  const isExpanded = expandedModule === modId;
 
-                    return (
+                  return (
+                    <div
+                      key={modId}
+                      style={{
+                        background: isExpanded ? 'rgba(12, 17, 26, 0.95)' : 'rgba(10, 14, 22, 0.7)',
+                        border: `1px solid ${isExpanded ? 'rgba(186, 255, 102, 0.3)' : 'rgba(255, 255, 255, 0.08)'}`,
+                        borderRadius: '10px',
+                        overflow: 'hidden',
+                        transition: 'all 0.2s ease'
+                      }}
+                    >
                       <div
-                        key={modId}
-                        className={`syllabus-module-card ${isExpanded ? 'expanded' : ''}`}
+                        onClick={() => setExpandedModule(isExpanded ? null : modId)}
+                        role="button"
+                        tabIndex={0}
+                        style={{
+                          padding: '16px 20px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          cursor: 'pointer',
+                          userSelect: 'none',
+                          gap: '12px'
+                        }}
                       >
-                        <div
-                          className="syllabus-module-header"
-                          onClick={() => setExpandedModule(isExpanded ? null : modId)}
-                          role="button"
-                          tabIndex={0}
-                        >
-                          <div className="module-title-group">
-                            <span className="module-idx mono">
-                              MODULE {String(mIdx + 1).padStart(2, '0')}
-                            </span>
-                            <h3>{mod.title}</h3>
-                          </div>
-                          <div className="module-meta-group">
-                            <span className="module-duration mono">
-                              <Clock size={13} /> {mod.duration || '2-3 Hours'}
-                            </span>
-                            <ChevronDown
-                              size={18}
-                              className={`chevron-icon ${isExpanded ? 'rotate' : ''}`}
-                            />
-                          </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0 }}>
+                          <span
+                            style={{
+                              fontFamily: 'var(--font-mono, monospace)',
+                              fontSize: '11px',
+                              fontWeight: 700,
+                              color: isExpanded ? '#070a0e' : '#baff66',
+                              background: isExpanded ? '#baff66' : 'rgba(186, 255, 102, 0.1)',
+                              padding: '3px 8px',
+                              borderRadius: '4px',
+                              whiteSpace: 'nowrap'
+                            }}
+                          >
+                            MODULE 0{mIdx + 1}
+                          </span>
+                          <h4 style={{ margin: 0, fontSize: '14px', fontWeight: 700, color: '#f1f5f9' }}>
+                            {mod.title}
+                          </h4>
                         </div>
 
-                        {isExpanded && (
-                          <div className="syllabus-module-body">
-                            {mod.summary && (
-                              <p className="module-description">{mod.summary}</p>
-                            )}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexShrink: 0 }}>
+                          <span
+                            style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '5px',
+                              fontSize: '11px',
+                              color: '#94a3b8',
+                              fontFamily: 'var(--font-mono, monospace)'
+                            }}
+                          >
+                            <Clock size={12} />
+                            {mod.duration || '1 Week'}
+                          </span>
+                          <ChevronDown
+                            size={16}
+                            color="#94a3b8"
+                            style={{
+                              transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
+                              transition: 'transform 0.2s ease'
+                            }}
+                          />
+                        </div>
+                      </div>
 
-                            {mod.lessons && mod.lessons.length > 0 && (
-                              <div className="module-lessons-list">
-                                <h4 className="mono-sublabel">CURRICULUM LESSONS:</h4>
-                                {mod.lessons.map((les, lIdx) => (
-                                  <div key={lIdx} className="lesson-item-row">
-                                    <span className="lesson-num mono">
-                                      {mIdx + 1}.{lIdx + 1}
+                      {isExpanded && (
+                        <div style={{ padding: '0 20px 20px 20px', borderTop: '1px solid rgba(255, 255, 255, 0.05)' }}>
+                          {mod.summary && (
+                            <p style={{ fontSize: '13px', color: '#cbd5e1', lineHeight: 1.6, margin: '14px 0 16px 0' }}>
+                              {mod.summary}
+                            </p>
+                          )}
+
+                          {/* Lessons / Key Topics List */}
+                          {((mod.topics && mod.topics.length > 0) || (mod.lessons && mod.lessons.length > 0)) && (
+                            <div style={{ marginBottom: '16px' }}>
+                              <span style={{ display: 'block', fontSize: '10.5px', fontWeight: 700, color: '#64748b', letterSpacing: '0.05em', marginBottom: '8px' }}>
+                                KEY LEARNING TOPICS:
+                              </span>
+                              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '8px' }}>
+                                {(mod.topics || mod.lessons.map(l => l.title)).map((topic, tIdx) => (
+                                  <div
+                                    key={tIdx}
+                                    style={{
+                                      display: 'flex',
+                                      alignItems: 'flex-start',
+                                      gap: '8px',
+                                      fontSize: '12px',
+                                      color: '#e2e8f0',
+                                      background: 'rgba(255, 255, 255, 0.03)',
+                                      padding: '8px 12px',
+                                      borderRadius: '6px',
+                                      border: '1px solid rgba(255, 255, 255, 0.05)'
+                                    }}
+                                  >
+                                    <span style={{ color: '#baff66', fontWeight: 700, fontSize: '11px', fontFamily: 'var(--font-mono, monospace)' }}>
+                                      {mIdx + 1}.{tIdx + 1}
                                     </span>
-                                    <div className="lesson-info">
-                                      <span className="lesson-title">{les.title}</span>
-                                      {les.topics && (
-                                        <div className="lesson-topics-chips">
-                                          {les.topics.map((top, tIdx) => (
-                                            <span key={tIdx} className="topic-pill mono">
-                                              {top}
-                                            </span>
-                                          ))}
-                                        </div>
-                                      )}
-                                    </div>
+                                    <span>{topic}</span>
                                   </div>
                                 ))}
                               </div>
-                            )}
+                            </div>
+                          )}
 
-                            {mod.labExercise && (
-                              <div className="module-lab-highlight">
-                                <Terminal size={15} />
-                                <div>
-                                  <span className="lab-tag mono">HANDS-ON SIMULATION:</span>
-                                  <p>{mod.labExercise}</p>
-                                </div>
+                          {/* Hands-on Lab Simulation Challenge */}
+                          {mod.labExercise && (
+                            <div
+                              style={{
+                                background: 'rgba(186, 255, 102, 0.04)',
+                                border: '1px solid rgba(186, 255, 102, 0.2)',
+                                borderRadius: '8px',
+                                padding: '12px 16px',
+                                display: 'flex',
+                                alignItems: 'flex-start',
+                                gap: '10px'
+                              }}
+                            >
+                              <Terminal size={16} color="#baff66" style={{ flexShrink: 0, marginTop: '2px' }} />
+                              <div>
+                                <span style={{ display: 'block', fontSize: '10px', fontWeight: 700, color: '#baff66', letterSpacing: '0.05em', marginBottom: '2px' }}>
+                                  HANDS-ON SIMULATION:
+                                </span>
+                                <span style={{ fontSize: '12.5px', fontWeight: 600, color: '#f1f5f9', display: 'block' }}>
+                                  {typeof mod.labExercise === 'object' ? mod.labExercise.title : 'Practical Lab Challenge'}
+                                </span>
+                                {typeof mod.labExercise === 'object' && mod.labExercise.description && (
+                                  <p style={{ fontSize: '12px', color: '#94a3b8', margin: '4px 0 0 0', lineHeight: 1.5 }}>
+                                    {mod.labExercise.description}
+                                  </p>
+                                )}
                               </div>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             )}
 
-            {/* TAB: LABS */}
+            {/* TAB 3: VIRTUAL LABS */}
             {activeTab === 'labs' && (
-              <div className="tab-pane tab-labs">
-                <div className="labs-grid">
+              <div className="spec-tab-content-fade">
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '16px' }}>
                   {labs.map((lab, lIdx) => (
-                    <div key={lIdx} className="interactive-lab-card">
-                      <div className="lab-card-top">
-                        <span className="lab-badge mono">VIRTUAL LAB 0{lIdx + 1}</span>
-                        {lab.difficulty && (
-                          <span className="lab-difficulty mono">{lab.difficulty}</span>
-                        )}
+                    <div
+                      key={lIdx}
+                      style={{
+                        background: 'rgba(12, 17, 26, 0.9)',
+                        border: '1px solid rgba(255, 255, 255, 0.08)',
+                        borderRadius: '10px',
+                        padding: '20px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        justifyContent: 'space-between',
+                        gap: '12px',
+                        transition: 'all 0.2s ease'
+                      }}
+                    >
+                      <div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                          <span style={{ fontSize: '10px', fontWeight: 700, color: '#baff66', background: 'rgba(186, 255, 102, 0.1)', padding: '2px 7px', borderRadius: '4px', fontFamily: 'var(--font-mono, monospace)' }}>
+                            VIRTUAL LAB 0{lIdx + 1}
+                          </span>
+                          <span style={{ fontSize: '10px', fontWeight: 600, color: '#94a3b8' }}>
+                            {lab.difficulty || 'Intermediate'}
+                          </span>
+                        </div>
+                        <h4 style={{ fontSize: '13.5px', fontWeight: 700, color: '#f1f5f9', margin: '0 0 8px 0' }}>
+                          {lab.title}
+                        </h4>
+                        <p style={{ fontSize: '12px', color: '#94a3b8', lineHeight: 1.55, margin: 0 }}>
+                          {lab.objective}
+                        </p>
                       </div>
-                      <h3>{lab.title}</h3>
-                      <p>{lab.objective || lab.description}</p>
-                      {lab.tools && (
-                        <div className="lab-tools-row">
-                          <span className="tools-label mono">Stack:</span>
+
+                      {lab.tools && lab.tools.length > 0 && (
+                        <div style={{ borderTop: '1px solid rgba(255, 255, 255, 0.06)', paddingTop: '10px', display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
                           {lab.tools.map((tl, tIdx) => (
-                            <span key={tIdx} className="lab-tool-chip mono">
+                            <span
+                              key={tIdx}
+                              style={{
+                                fontSize: '10px',
+                                fontFamily: 'var(--font-mono, monospace)',
+                                color: '#baff66',
+                                background: 'rgba(186, 255, 102, 0.06)',
+                                border: '1px solid rgba(186, 255, 102, 0.16)',
+                                padding: '2px 7px',
+                                borderRadius: '4px'
+                              }}
+                            >
                               {tl}
                             </span>
                           ))}
@@ -534,20 +781,51 @@ export default function CourseDetailPage({
               </div>
             )}
 
-            {/* TAB: TOOLS */}
+            {/* TAB 4: TOOLS & ECOSYSTEM */}
             {activeTab === 'tools' && (
-              <div className="tab-pane tab-tools">
-                <div className="tools-mastered-grid">
+              <div className="spec-tab-content-fade">
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '14px' }}>
                   {tools.map((tl, tIdx) => {
                     const toolName = typeof tl === 'string' ? tl : tl.name;
-                    const toolDesc = typeof tl === 'object' ? tl.desc : null;
+                    const toolDesc = typeof tl === 'object' ? tl.desc : 'Industrial standard cybersecurity utility integrated into curriculum sandboxes.';
 
                     return (
-                      <div key={tIdx} className="tool-card">
-                        <Terminal size={18} />
+                      <div
+                        key={tIdx}
+                        style={{
+                          background: 'rgba(12, 17, 26, 0.88)',
+                          border: '1px solid rgba(255, 255, 255, 0.08)',
+                          borderRadius: '8px',
+                          padding: '16px',
+                          display: 'flex',
+                          alignItems: 'flex-start',
+                          gap: '12px',
+                          transition: 'all 0.2s ease'
+                        }}
+                      >
+                        <div
+                          style={{
+                            width: '32px',
+                            height: '32px',
+                            borderRadius: '6px',
+                            background: 'rgba(186, 255, 102, 0.1)',
+                            border: '1px solid rgba(186, 255, 102, 0.25)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            color: '#baff66',
+                            flexShrink: 0
+                          }}
+                        >
+                          <Terminal size={15} />
+                        </div>
                         <div>
-                          <h4 className="mono">{toolName}</h4>
-                          {toolDesc && <p>{toolDesc}</p>}
+                          <h4 style={{ margin: '0 0 4px 0', fontSize: '13px', fontWeight: 700, color: '#f1f5f9', fontFamily: 'var(--font-mono, monospace)' }}>
+                            {toolName}
+                          </h4>
+                          <p style={{ margin: 0, fontSize: '11.5px', color: '#94a3b8', lineHeight: 1.45 }}>
+                            {toolDesc}
+                          </p>
                         </div>
                       </div>
                     );
@@ -556,33 +834,97 @@ export default function CourseDetailPage({
               </div>
             )}
 
-            {/* TAB: CAPSTONE */}
+            {/* TAB 5: CAPSTONE & CERTIFICATION */}
             {activeTab === 'capstone' && capstone && (
-              <div className="tab-pane tab-capstone">
-                <div className="capstone-project-card">
-                  <div className="capstone-header">
-                    <Award size={24} />
-                    <div>
-                      <span className="capstone-badge mono">FINAL EVALUATION</span>
-                      <h3>{capstone.title || 'Comprehensive Capstone Assessment'}</h3>
-                    </div>
+              <div className="spec-tab-content-fade">
+                <div className="poc-dossier-card">
+                  <div className="dossier-badges-row">
+                    <span className="dossier-severity-badge" style={{ color: '#baff66', background: 'rgba(186, 255, 102, 0.1)', borderColor: 'rgba(186, 255, 102, 0.3)' }}>
+                      <Award size={13} />
+                      FINAL VERIFICATION ASSESSMENT
+                    </span>
+                    <span className="dossier-cwe-badge">NIST AI RMF · OWASP CERTIFIED</span>
                   </div>
-                  <p className="capstone-desc">
-                    {capstone.description || capstone.summary}
+
+                  <h3 className="dossier-title">{capstone.title || 'Comprehensive Capstone Assessment'}</h3>
+
+                  <p style={{ fontSize: '13px', color: '#cbd5e1', lineHeight: 1.6, margin: 0 }}>
+                    {capstone.description || capstone.summary || 'Execute an end-to-end objective simulation against an enterprise target infrastructure to demonstrate verifiable mastery before certificate issuance.'}
                   </p>
+
+                  {/* Required Capstone Deliverables */}
                   {capstone.deliverables && (
-                    <div className="capstone-deliverables-list">
-                      <h4 className="mono-sublabel">REQUIRED DELIVERABLES:</h4>
-                      <ul>
-                        {capstone.deliverables.map((del, dIdx) => (
-                          <li key={dIdx}>
-                            <CheckCircle2 size={14} />
-                            <span>{del}</span>
-                          </li>
+                    <div style={{ background: 'rgba(7, 10, 15, 0.65)', border: '1px solid rgba(255, 255, 255, 0.06)', borderRadius: '8px', padding: '16px' }}>
+                      <span style={{ display: 'block', fontSize: '10.5px', fontWeight: 700, color: '#64748b', letterSpacing: '0.05em', marginBottom: '10px' }}>
+                        REQUIRED EVALUATION DELIVERABLES:
+                      </span>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        {capstone.deliverables.map((deliv, dIdx) => (
+                          <div key={dIdx} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', color: '#e2e8f0' }}>
+                            <CheckCircle2 size={13} color="#baff66" style={{ flexShrink: 0 }} />
+                            <span>{deliv}</span>
+                          </div>
                         ))}
-                      </ul>
+                      </div>
                     </div>
                   )}
+
+                  {/* Certificate Preview Card */}
+                  <div
+                    style={{
+                      background: 'linear-gradient(135deg, rgba(16, 24, 36, 0.95) 0%, rgba(9, 13, 20, 0.98) 100%)',
+                      border: '1px solid rgba(186, 255, 102, 0.3)',
+                      borderRadius: '8px',
+                      padding: '16px 20px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      flexWrap: 'wrap',
+                      gap: '14px'
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      <div
+                        style={{
+                          width: '40px',
+                          height: '40px',
+                          borderRadius: '8px',
+                          background: 'rgba(186, 255, 102, 0.1)',
+                          border: '1px solid rgba(186, 255, 102, 0.3)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          color: '#baff66'
+                        }}
+                      >
+                        <FileCheck2 size={20} />
+                      </div>
+                      <div>
+                        <span style={{ fontSize: '13px', fontWeight: 700, color: '#f1f5f9', display: 'block' }}>
+                          Nexguard Certified Security Specialist (NCSS)
+                        </span>
+                        <span style={{ fontSize: '11px', color: '#94a3b8' }}>
+                          Cryptographically signed digital credential with public verification link
+                        </span>
+                      </div>
+                    </div>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span
+                        style={{
+                          fontSize: '11px',
+                          fontWeight: 700,
+                          color: '#baff66',
+                          background: 'rgba(186, 255, 102, 0.08)',
+                          border: '1px solid rgba(186, 255, 102, 0.2)',
+                          padding: '4px 10px',
+                          borderRadius: '4px'
+                        }}
+                      >
+                        30 CPE CREDITS
+                      </span>
+                    </div>
+                  </div>
                 </div>
               </div>
             )}
@@ -590,69 +932,101 @@ export default function CourseDetailPage({
         </div>
       </section>
 
-      {/* 4. Bottom Cohort Inquiry CTA */}
-      <section className="service-scoping-cta">
-        <div className="container">
-          <div className="scoping-cta-box">
-            <div>
-              <h2>Train Your Engineering or Security Team</h2>
+      {/* 4. Enterprise Team Training Scoping Banner */}
+      <section className="spec-section-wrapper spec-section-darker">
+        <div className="spec-canvas-container">
+          <div className="spec-scoping-banner-box">
+            <div className="banner-left-info">
+              <span className="banner-badge">ENTERPRISE TEAM UPSKILLING</span>
+              <h2>Train Your Engineering or Security Cohort</h2>
               <p>
-                We offer private cohort schedules, custom lab environments, and instructor-led coaching for teams.
+                We offer dedicated corporate cohort schedules, custom virtual sandbox topologies, and instructor-led coaching tailored to your organization’s tech stack.
               </p>
+              <div className="banner-assurance-list">
+                <div className="assurance-bullet">
+                  <CheckCircle2 size={14} color="#baff66" />
+                  <span>Dedicated private sandbox instances with custom corporate IP whitelisting</span>
+                </div>
+                <div className="assurance-bullet">
+                  <CheckCircle2 size={14} color="#baff66" />
+                  <span>Live debrief workshops led by offensive security research fellows</span>
+                </div>
+                <div className="assurance-bullet">
+                  <CheckCircle2 size={14} color="#baff66" />
+                  <span>Executive skill telemetry and competency progress dashboard</span>
+                </div>
+              </div>
             </div>
-            <button
-              type="button"
-              className="btn btn-primary"
-              onClick={() => onInquireCohort && onInquireCohort(track.title)}
-            >
-              Inquire Team Training <ArrowUpRight size={15} />
-            </button>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', alignItems: 'center', textAlign: 'center' }}>
+              <div style={{ width: '48px', height: '48px', borderRadius: '10px', background: 'rgba(186, 255, 102, 0.1)', border: '1px solid rgba(186, 255, 102, 0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#baff66' }}>
+                <Users size={22} />
+              </div>
+              <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 700, color: '#f1f5f9' }}>
+                Cohort Sizing: 5 - 50 Seats
+              </h3>
+              <p style={{ margin: 0, fontSize: '12px', color: '#94a3b8', maxWidth: '280px' }}>
+                Volume enrollment discounts and customized lab scopes available on request.
+              </p>
+              <button
+                type="button"
+                className="spec-hero-cta-btn"
+                style={{ width: '100%', justifyContent: 'center', marginTop: '6px' }}
+                onClick={() => onInquireCohort && onInquireCohort(track.title)}
+              >
+                <span>Inquire Corporate Training</span>
+                <ArrowUpRight size={14} />
+              </button>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* 5. Connected Academy Tracks (from Database) */}
+      {/* 5. Connected Curricula Section */}
       {allTracks.length > 1 && (
-        <section className="related-services-section">
-          <div className="container">
-            <div className="section-heading">
-              <div>
-                <div className="eyebrow">
-                  <span className="eyebrow-line" /> CONNECTED CURRICULA
-                </div>
-                <h2>Explore Connected Learning Tracks</h2>
+        <section className="spec-section-wrapper">
+          <div className="spec-canvas-container">
+            <div className="spec-section-header">
+              <div className="sec-eyebrow">
+                <Compass size={13} />
+                <span>CONNECTED CURRICULA</span>
               </div>
+              <h2>Explore Related Learning Tracks</h2>
               <p>
-                Deepen your defensive and offensive cyber skills across our structured learning tracks.
+                Deepen your defensive and offensive cyber tradecraft across our specialized professional learning pathways.
               </p>
             </div>
 
-            <div className="related-services-grid">
+            <div className="deliverables-four-grid">
               {allTracks
                 .filter((c) => c.slug !== track.slug)
+                .slice(0, 4)
                 .map((c, index) => {
                   const OtherIcon = iconMap[c.slug] || BookOpen;
                   return (
-                    <article
+                    <div
                       key={c.slug || index}
-                      className="related-service-card"
+                      className="deliverable-quad-card"
                       onClick={() => {
                         window.location.hash = `#course/${c.slug}`;
                       }}
                       role="button"
                       tabIndex={0}
+                      style={{ cursor: 'pointer' }}
                     >
-                      <div className="related-card-top">
-                        <span className="service-number">/0{index + 1}</span>
-                        <OtherIcon size={20} />
+                      <div className="quad-top-meta">
+                        <span className="quad-num">TRACK 0{index + 1}</span>
+                        <OtherIcon size={16} color="#baff66" />
                       </div>
-                      <span className="card-tag">{c.category || 'TRACK'}</span>
-                      <h3>{c.title}</h3>
-                      <p>{c.summary}</p>
-                      <span className="card-link">
-                        View Curriculum <ArrowUpRight size={14} />
+                      <span style={{ fontSize: '10px', fontWeight: 700, color: '#baff66', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                        {c.category || 'ACADEMY'}
                       </span>
-                    </article>
+                      <h4>{c.title}</h4>
+                      <p>{c.summary}</p>
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontSize: '11.5px', fontWeight: 600, color: '#baff66', marginTop: 'auto' }}>
+                        View Curriculum <ArrowUpRight size={13} />
+                      </span>
+                    </div>
                   );
                 })}
             </div>
