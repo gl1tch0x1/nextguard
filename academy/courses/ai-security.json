@@ -1,0 +1,47 @@
+{
+  "slug": "ai-security",
+  "title": "AI for Cybersecurity",
+  "category": "AI & Automation",
+  "level": "Intermediate",
+  "duration": "5 weeks",
+  "summary": "Use AI responsibly for code review, finding triage, learning, and workflow automation.",
+  "published": true,
+  "lessons": [
+    {
+      "title": "Safe AI-assisted security workflows",
+      "summary": "Keep humans accountable and avoid exposing secrets.",
+      "content": "Minimize sensitive data sent to providers, validate AI-generated claims, test prompts against untrusted input, and require human review before changes or external actions. Keep API keys server-side and enforce budgets and quotas.",
+      "durationMinutes": 25,
+      "quiz": [
+        {
+          "question": "Where should a production AI API key be stored?",
+          "options": [
+            "In frontend source code",
+            "In a public repository",
+            "In a protected server-side secret store"
+          ],
+          "correctIndex": 2,
+          "explanation": "A server-side secret store or protected environment secret prevents exposing credentials to browser users."
+        }
+      ]
+    },
+    {
+      "title": "Prompt injection defenses and LLM guardrails",
+      "summary": "Mitigate indirect prompt injection, data poisoning, and unauthorized tool calls.",
+      "content": "Prompt injections occur when untrusted input hijacks the system instructions of an LLM. Defenses include input sanitization, semantic classification guardrails, principle of least privilege on tool calls, and strict human-in-the-loop approvals for destructive operations.",
+      "durationMinutes": 30,
+      "quiz": [
+        {
+          "question": "What is an indirect prompt injection attack?",
+          "options": [
+            "Physically tampering with server hardware",
+            "Embedding malicious adversarial instructions inside untrusted third-party data retrieved by the model",
+            "Overclocking the GPU"
+          ],
+          "correctIndex": 1,
+          "explanation": "Indirect prompt injection occurs when external content (web pages, emails, database records) contains hidden prompt instructions parsed as commands by the model."
+        }
+      ]
+    }
+  ]
+}

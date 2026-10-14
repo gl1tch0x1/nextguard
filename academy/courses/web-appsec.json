@@ -1,0 +1,47 @@
+{
+  "slug": "web-appsec",
+  "title": "Web Application Security",
+  "category": "Application Security",
+  "level": "Intermediate",
+  "duration": "6 weeks",
+  "summary": "Understand common web risks, testing methodology, secure design, and remediation.",
+  "published": true,
+  "lessons": [
+    {
+      "title": "Input handling and parameterized queries",
+      "summary": "Trace untrusted input and prevent injection flaws.",
+      "content": "Treat all client-controlled input as untrusted. Prefer parameterized queries, strict validation, safe output encoding, and least-privilege database accounts. Build regression tests around the underlying trust boundary.",
+      "durationMinutes": 30,
+      "quiz": [
+        {
+          "question": "Which approach is the primary defense against SQL injection?",
+          "options": [
+            "Concatenating escaped strings",
+            "Parameterized queries",
+            "Hiding database errors only"
+          ],
+          "correctIndex": 1,
+          "explanation": "Parameterized queries separate query structure from untrusted values."
+        }
+      ]
+    },
+    {
+      "title": "Cross-Site Scripting (XSS) and Content Security Policy",
+      "summary": "Contextual output encoding and strict CSP mitigation strategies.",
+      "content": "XSS occurs when an application includes untrusted data in an HTTP response without proper validation or escaping. Contextual encoding (HTML, attribute, JS, CSS) alongside a strict nonced Content-Security-Policy (CSP) drastically reduces exploitation surface.",
+      "durationMinutes": 35,
+      "quiz": [
+        {
+          "question": "What is the primary role of a Content-Security-Policy header?",
+          "options": [
+            "To encrypt all database tables",
+            "To restrict the sources from which scripts, styles, and other assets can be loaded or executed",
+            "To replace server-side authentication"
+          ],
+          "correctIndex": 1,
+          "explanation": "CSP is an HTTP response header that restricts resource origins and prevents execution of inline untrusted scripts."
+        }
+      ]
+    }
+  ]
+}

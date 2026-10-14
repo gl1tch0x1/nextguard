@@ -1,0 +1,47 @@
+{
+  "slug": "bug-bounty",
+  "title": "Bug Bounty Methodology",
+  "category": "Offensive Security",
+  "level": "Intermediate",
+  "duration": "Self-paced",
+  "summary": "Learn scope-first recon, evidence quality, impact validation, and responsible reporting.",
+  "published": true,
+  "lessons": [
+    {
+      "title": "Scope, rules, and evidence quality",
+      "summary": "Plan safe, reproducible, minimal-impact tests.",
+      "content": "Read program scope and exclusions before testing. Prefer minimal proof, avoid collecting other users’ data, stop when impact is established, and report clear reproduction steps with remediation recommendations.",
+      "durationMinutes": 25,
+      "quiz": [
+        {
+          "question": "When should a tester stop validating an issue?",
+          "options": [
+            "After impact is demonstrated safely",
+            "Only after downloading all accessible data",
+            "Never; continue until the system fails"
+          ],
+          "correctIndex": 0,
+          "explanation": "Stop once sufficient safe evidence demonstrates impact; avoid unnecessary access or disruption."
+        }
+      ]
+    },
+    {
+      "title": "Clear reproduction steps and responsible disclosure",
+      "summary": "Drafting high-signal vulnerability triage reports.",
+      "content": "An effective report provides immediate business impact, explicit steps to reproduce, HTTP request/response proofs of concept, and pragmatic mitigation advice. Timely communication and coordinated disclosure protect both defenders and users.",
+      "durationMinutes": 25,
+      "quiz": [
+        {
+          "question": "What is the most critical element of a high-value bug report?",
+          "options": [
+            "An aggressive tone demanding bounty payment",
+            "Clear, minimal reproduction steps demonstrating tangible impact",
+            "A dump of automated scanner logs"
+          ],
+          "correctIndex": 1,
+          "explanation": "Security teams need clear, deterministic steps to reproduce and verify the underlying impact."
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,47 @@
+{
+  "slug": "cyber-foundations",
+  "title": "Cybersecurity Foundations",
+  "category": "Foundations",
+  "level": "Beginner",
+  "duration": "4 weeks",
+  "summary": "Build a clear mental model of security principles, risk, identity, and defense.",
+  "published": true,
+  "lessons": [
+    {
+      "title": "Security principles and threat modeling",
+      "summary": "Confidentiality, integrity, availability, assets, threats, and risk.",
+      "content": "Start with assets and business context. Identify realistic threats, weaknesses, likelihood, and impact. Select controls proportionate to risk and validate that they work. Threat modeling allows teams to discover design flaws before writing production code.",
+      "durationMinutes": 20,
+      "quiz": [
+        {
+          "question": "What does least privilege mean?",
+          "options": [
+            "Give every user administrator rights",
+            "Grant only the access needed for a task",
+            "Disable audit logging"
+          ],
+          "correctIndex": 1,
+          "explanation": "Least privilege limits access to what a role or task actually needs."
+        }
+      ]
+    },
+    {
+      "title": "Identity, authentication, and authorization",
+      "summary": "Separate proving identity from checking access.",
+      "content": "Authentication establishes who a user is. Authorization decides what that identity may do. Enforce access controls server-side on every sensitive action, and test owner, non-owner, and anonymous cases.",
+      "durationMinutes": 25,
+      "quiz": [
+        {
+          "question": "Where should access-control decisions be enforced?",
+          "options": [
+            "Only in the browser UI",
+            "Only in hidden form fields",
+            "On the server for every protected operation"
+          ],
+          "correctIndex": 2,
+          "explanation": "Client-side controls can be bypassed; the server must enforce authorization."
+        }
+      ]
+    }
+  ]
+}

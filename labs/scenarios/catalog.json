@@ -1,0 +1,92 @@
+[
+  {
+    "slug": "http-headers",
+    "title": "HTTP Security Headers",
+    "level": "Beginner",
+    "estimatedMinutes": 25,
+    "objective": "Inspect a local practice response and recommend safe security headers.",
+    "safety": "Use only the provided mock response or your own local lab.",
+    "steps": [
+      "Review the supplied sample response headers.",
+      "Identify missing or overly permissive headers.",
+      "Write a remediation note for Content-Security-Policy, HSTS, and frame protection."
+    ],
+    "challenge": "Explain one compatibility trade-off for a strict Content-Security-Policy.",
+    "hints": [
+      "Start with the threat each header is intended to reduce."
+    ],
+    "kind": "static"
+  },
+  {
+    "slug": "access-control",
+    "title": "Broken Access Control Review",
+    "level": "Intermediate",
+    "estimatedMinutes": 35,
+    "objective": "Reason about authorization checks using a fictional application scenario.",
+    "safety": "Do not test real accounts or systems; use the fictional data in this exercise.",
+    "steps": [
+      "Read the fictional endpoint and role matrix shown in the lesson.",
+      "Identify which server-side ownership checks are missing.",
+      "Propose a deny-by-default authorization test."
+    ],
+    "challenge": "Write a three-case test plan covering owner, non-owner, and anonymous requests.",
+    "hints": [
+      "Authentication identifies the actor; authorization decides what that actor can do."
+    ],
+    "kind": "static"
+  },
+  {
+    "slug": "sqli-remediation",
+    "title": "SQL Injection: Root Cause & Fix",
+    "level": "Intermediate",
+    "estimatedMinutes": 30,
+    "objective": "Compare unsafe string concatenation with parameterized query patterns.",
+    "safety": "Code review only. Do not run payloads against public services.",
+    "steps": [
+      "Review the intentionally simplified pseudocode in the lesson.",
+      "Mark where untrusted input crosses into a query.",
+      "Replace concatenation with parameterized queries and least-privilege database access."
+    ],
+    "challenge": "Describe one unit test and one integration test for the fix.",
+    "hints": [
+      "Escaping alone is not a substitute for parameterized queries."
+    ],
+    "kind": "static"
+  },
+  {
+    "slug": "csrf-defense",
+    "title": "CSRF & Cookie Protection",
+    "level": "Intermediate",
+    "estimatedMinutes": 30,
+    "objective": "Assess Cross-Site Request Forgery vulnerabilities in cookie-based sessions.",
+    "safety": "Code review and architecture analysis only.",
+    "steps": [
+      "Analyze session cookie attributes (SameSite, Secure, HttpOnly).",
+      "Evaluate state-changing POST endpoints lacking CSRF tokens or Origin validation.",
+      "Specify a modern multi-layered defense using SameSite=Strict/Lax and custom anti-CSRF request headers."
+    ],
+    "challenge": "Explain how modern SPA architecture leverages custom header checks (e.g. X-Requested-With) to prevent simple cross-site form submissions.",
+    "hints": [
+      "Cross-origin simple form submissions cannot set arbitrary custom headers without triggering a preflight CORS check."
+    ],
+    "kind": "static"
+  },
+  {
+    "slug": "xss-mitigation",
+    "title": "Cross-Site Scripting & Contextual Defense",
+    "level": "Intermediate",
+    "estimatedMinutes": 35,
+    "objective": "Diagnose DOM-based and reflected XSS vulnerabilities in modern frontends.",
+    "safety": "Review the supplied vulnerable JavaScript component only.",
+    "steps": [
+      "Inspect dangerouslySetInnerHTML and direct innerHTML sinks.",
+      "Implement context-aware HTML sanitization using DOMPurify.",
+      "Draft a Defense-in-Depth policy using nonced Content-Security-Policy."
+    ],
+    "challenge": "Why is client-side input sanitization alone insufficient to protect all downstream consumers?",
+    "hints": [
+      "Data written directly via APIs or other services can bypass browser-only sanitizers."
+    ],
+    "kind": "static"
+  }
+]

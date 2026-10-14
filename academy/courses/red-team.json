@@ -1,0 +1,47 @@
+{
+  "slug": "red-team",
+  "title": "Red Teaming Fundamentals",
+  "category": "Offensive Security",
+  "level": "Advanced",
+  "duration": "8 weeks",
+  "summary": "Explore objective-driven simulations, rules of engagement, and detection collaboration.",
+  "published": true,
+  "lessons": [
+    {
+      "title": "Rules of engagement and deconfliction",
+      "summary": "Keep simulations bounded, authorized, and measurable.",
+      "content": "Agree on written authorization, scope, dates, prohibited actions, emergency contacts, data handling, and stop conditions. Coordinate deconfliction without undermining the agreed learning objectives.",
+      "durationMinutes": 30,
+      "quiz": [
+        {
+          "question": "What should happen before a red-team engagement?",
+          "options": [
+            "Run reconnaissance first and ask later",
+            "Agree written authorization, scope, and stop conditions",
+            "Disable all monitoring"
+          ],
+          "correctIndex": 1,
+          "explanation": "Written scope and stop conditions establish safe, authorized boundaries."
+        }
+      ]
+    },
+    {
+      "title": "Purple teaming and detection telemetry feedback",
+      "summary": "Translating adversarial tactics into high-fidelity detection rules.",
+      "content": "A successful red team exercise does not end with access; it culminates in a purple team review where defenders (Blue) verify whether telemetry and alerts fired at each phase of the MITRE ATT&CK chain.",
+      "durationMinutes": 35,
+      "quiz": [
+        {
+          "question": "What is the core objective of a Purple Team collaboration?",
+          "options": [
+            "To prove the Red team is superior to the Blue team",
+            "To iteratively improve detection engineering and validate logging telemetry",
+            "To eliminate the need for firewalls"
+          ],
+          "correctIndex": 1,
+          "explanation": "Purple teaming pairs offensive emulation directly with defensive validation to strengthen detection engineering."
+        }
+      ]
+    }
+  ]
+}

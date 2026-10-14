@@ -1,0 +1,68 @@
+[
+  {
+    "slug": "cyber-foundations",
+    "title": "Cybersecurity Foundations",
+    "category": "Foundations",
+    "level": "Beginner",
+    "duration": "4 weeks",
+    "summary": "Build a clear mental model of security principles, risk, identity, and defense.",
+    "icon": "ShieldCheck",
+    "modulesCount": 2,
+    "prerequisites": ["Basic computer literacy"]
+  },
+  {
+    "slug": "network-linux",
+    "title": "Networking & Linux for Security",
+    "category": "Infrastructure",
+    "level": "Beginner",
+    "duration": "6 weeks",
+    "summary": "Learn TCP/IP, DNS, Linux fundamentals, command-line workflows, and troubleshooting.",
+    "icon": "Network",
+    "modulesCount": 3,
+    "prerequisites": ["Basic terminal familiarity"]
+  },
+  {
+    "slug": "web-appsec",
+    "title": "Web Application Security",
+    "category": "Application Security",
+    "level": "Intermediate",
+    "duration": "6 weeks",
+    "summary": "Understand common web risks, testing methodology, secure design, and remediation.",
+    "icon": "Code2",
+    "modulesCount": 4,
+    "prerequisites": ["Cybersecurity Foundations", "HTTP and Web Basics"]
+  },
+  {
+    "slug": "bug-bounty",
+    "title": "Bug Bounty Methodology",
+    "category": "Offensive Security",
+    "level": "Intermediate",
+    "duration": "Self-paced",
+    "summary": "Learn scope-first recon, evidence quality, impact validation, and responsible reporting.",
+    "icon": "Radar",
+    "modulesCount": 3,
+    "prerequisites": ["Web Application Security"]
+  },
+  {
+    "slug": "red-team",
+    "title": "Red Teaming Fundamentals",
+    "category": "Offensive Security",
+    "level": "Advanced",
+    "duration": "8 weeks",
+    "summary": "Explore objective-driven simulations, rules of engagement, and detection collaboration.",
+    "icon": "Crosshair",
+    "modulesCount": 4,
+    "prerequisites": ["Networking & Linux", "Threat Modeling"]
+  },
+  {
+    "slug": "ai-security",
+    "title": "AI for Cybersecurity",
+    "category": "AI & Automation",
+    "level": "Intermediate",
+    "duration": "5 weeks",
+    "summary": "Use AI responsibly for code review, finding triage, learning, and workflow automation.",
+    "icon": "BrainCircuit",
+    "modulesCount": 3,
+    "prerequisites": ["Python basics", "Application Security Foundations"]
+  }
+]

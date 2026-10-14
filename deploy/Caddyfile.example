@@ -1,0 +1,10 @@
+# Install Caddy on the host, point DNS A/AAAA records to this host,
+# replace the domain, then load this site block in the Caddy config.
+your-domain.example {
+  encode zstd gzip
+  reverse_proxy 127.0.0.1:8080 {
+    header_up X-Forwarded-Proto {scheme}
+    header_up X-Forwarded-For {remote_host}
+    header_up X-Real-IP {remote_host}
+  }
+}

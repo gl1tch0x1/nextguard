@@ -1,0 +1,47 @@
+{
+  "slug": "network-linux",
+  "title": "Networking & Linux for Security",
+  "category": "Infrastructure",
+  "level": "Beginner",
+  "duration": "6 weeks",
+  "summary": "Learn TCP/IP, DNS, Linux fundamentals, command-line workflows, and troubleshooting.",
+  "published": true,
+  "lessons": [
+    {
+      "title": "TCP/IP and common network services",
+      "summary": "Understand addressing, ports, DNS, HTTP, and TLS at a conceptual level.",
+      "content": "Map a connection from name resolution to transport and application protocols. Use packet captures only in your own lab and minimize collection of sensitive traffic. Grasping the OSI 7-layer stack and TCP 3-way handshake is the foundational anchor for firewall configuration and traffic analysis.",
+      "durationMinutes": 25,
+      "quiz": [
+        {
+          "question": "What is DNS primarily used for?",
+          "options": [
+            "Mapping names to records such as IP addresses",
+            "Encrypting all application traffic",
+            "Authenticating local users"
+          ],
+          "correctIndex": 0,
+          "explanation": "DNS resolves names and provides other published records; it is not an encryption protocol."
+        }
+      ]
+    },
+    {
+      "title": "Linux permissions and process isolation",
+      "summary": "POSIX permissions, UID/GID security models, and systemd service sandboxing.",
+      "content": "Linux file modes (rwxrwxrwx), SUID/SGID bits, umask, and capabilities dictate execution boundaries. System services must execute as unprivileged service accounts with restrictive sandboxing flags.",
+      "durationMinutes": 30,
+      "quiz": [
+        {
+          "question": "Why is the SUID bit on an executable dangerous if misconfigured?",
+          "options": [
+            "It deletes the binary on invocation",
+            "It causes the process to execute with the file owner's privileges rather than the caller's",
+            "It disables network connectivity"
+          ],
+          "correctIndex": 1,
+          "explanation": "SUID binaries execute with the permissions of the file owner (often root), creating high-risk privilege escalation avenues if flawed."
+        }
+      ]
+    }
+  ]
+}

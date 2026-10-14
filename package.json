@@ -1,0 +1,16 @@
+{
+  "name": "nexguard-mern",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "workspaces": ["client", "server"],
+  "scripts": {
+    "dev": "concurrently \"npm run dev --workspace server\" \"npm run dev --workspace client\"",
+    "build": "npm run build --workspace client",
+    "start": "npm start --workspace server",
+    "seed:admin": "npm run seed:admin --workspace server",
+    "seed:content": "npm run seed:content --workspace server",
+    "test": "node test-suite.js"
+  },
+  "devDependencies": { "concurrently": "^9.1.2" }
+}
