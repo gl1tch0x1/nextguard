@@ -29,7 +29,9 @@ import {
   FileCheck2,
   Sparkles,
   Users,
-  Compass
+  Compass,
+  Shield,
+  Zap
 } from 'lucide-react';
 import { apiRequest } from '../../api/client.js';
 import { Badge } from '../ui/badge.jsx';
@@ -319,16 +321,19 @@ export default function CourseDetailPage({
 
             <h1 className="spec-hero-main-title">{track.title}</h1>
             
-            {track.heroSubtitle && (
-              <p className="spec-hero-tagline-text">{track.heroSubtitle}</p>
-            )}
-
-            <p className="spec-hero-lead-summary">{track.summary}</p>
+            <p className="spec-hero-lead-summary">
+              {track.heroSubtitle && (
+                <span className="spec-hero-lead-highlight">{track.heroSubtitle}</span>
+              )}
+              {track.summary && track.summary !== track.heroSubtitle && (
+                <span className="spec-hero-lead-body">{track.summary}</span>
+              )}
+            </p>
 
             {/* 4-Stat Curriculum Metric Bar */}
             <div className="spec-stats-bar">
               <div className="spec-stat-item">
-                <span className="stat-value">{track.duration || 'Self-Paced'}</span>
+                <span className="stat-value">{track.duration || '6 Weeks'}</span>
                 <span className="stat-label">Estimated Timeline</span>
               </div>
               <div className="spec-stat-divider" />
@@ -338,17 +343,17 @@ export default function CourseDetailPage({
               </div>
               <div className="spec-stat-divider" />
               <div className="spec-stat-item">
-                <span className="stat-value">{labs.length} Virtual Sandboxes</span>
+                <span className="stat-value">{labs.length} Sandboxes</span>
                 <span className="stat-label">Hands-on CLI Labs</span>
               </div>
               <div className="spec-stat-divider" />
               <div className="spec-stat-item">
-                <span className="stat-value" style={{ color: '#baff66' }}>Verified Credential</span>
-                <span className="stat-label">Certification Lab</span>
+                <span className="stat-value">30 CPE Credits</span>
+                <span className="stat-label">NCSS Certification</span>
               </div>
             </div>
 
-            {/* Hero CTAs */}
+            {/* Hero Action Buttons */}
             <div className="spec-hero-action-buttons">
               <Button
                 variant="primary"
@@ -363,7 +368,7 @@ export default function CourseDetailPage({
                 }}
               >
                 <ShoppingCart size={14} />
-                <span>{isInCart(track.slug) ? 'View in Cart · $199' : `Enroll in Track · $${trackPrice}`}</span>
+                <span>{isInCart(track.slug) ? 'View in Cart' : `Enroll in Track · $${trackPrice}`}</span>
               </Button>
 
               <button
@@ -380,18 +385,47 @@ export default function CourseDetailPage({
                   fill={isInWishlist(track.slug) ? '#ff4d6d' : 'none'}
                   stroke={isInWishlist(track.slug) ? '#ff4d6d' : 'currentColor'}
                 />
-                <span>{isInWishlist(track.slug) ? 'Saved in Wishlist' : 'Add to Wishlist'}</span>
+                <span>{isInWishlist(track.slug) ? 'Saved' : 'Add to Wishlist'}</span>
               </button>
 
               <button
                 type="button"
                 className="spec-hero-secondary-btn"
+                onClick={() => {
+                  const el = document.getElementById('curriculum-explorer');
+                  if (el) el.scrollIntoView({ behavior: 'smooth' });
+                }}
+                title="Jump to syllabus and lab simulations"
+              >
+                <Compass size={13} />
+                <span>Explore Syllabus</span>
+              </button>
+
+              <button
+                type="button"
+                className="spec-hero-link-btn"
                 onClick={() => onInquireCohort && onInquireCohort(track.title)}
                 title="Request team training cohort"
               >
                 <span>Team Cohort</span>
                 <ArrowUpRight size={13} />
               </button>
+            </div>
+
+            {/* Assurance & Accreditation Footnote Row */}
+            <div className="spec-hero-assurances-row">
+              <div className="spec-assurance-chip">
+                <CheckCircle2 size={12} color="#baff66" />
+                <span>Cloud Browser Sandboxes · No Local Setup</span>
+              </div>
+              <div className="spec-assurance-chip">
+                <Award size={12} color="#baff66" />
+                <span>Cryptographically Verifiable Credential</span>
+              </div>
+              <div className="spec-assurance-chip">
+                <Clock size={12} color="#baff66" />
+                <span>Lifetime Updates & Community</span>
+              </div>
             </div>
           </div>
 
@@ -415,19 +449,19 @@ export default function CourseDetailPage({
                 </div>
                 <div className="profile-spec-row">
                   <span className="row-label">Estimated Effort</span>
-                  <span className="row-value">{track.duration || '5 Weeks (10 hrs/wk)'}</span>
+                  <span className="row-value">{track.duration || '6 Weeks (Self-Paced)'}</span>
                 </div>
                 <div className="profile-spec-row">
                   <span className="row-label">Lab Delivery</span>
-                  <span className="row-value">{labs.length} Browser Sandbox Environments</span>
+                  <span className="row-value">{labs.length} Browser Sandbox Topologies</span>
                 </div>
                 <div className="profile-spec-row">
                   <span className="row-label">Evaluation Mode</span>
-                  <span className="row-value">{capstone ? 'Independent Capstone PoC' : 'Practical Examination'}</span>
+                  <span className="row-value">{capstone ? 'Independent Capstone PoC' : 'Practical Exam'}</span>
                 </div>
                 <div className="profile-spec-row">
-                  <span className="row-label">Access Model</span>
-                  <span className="row-value">Lifetime Updates + Community</span>
+                  <span className="row-label">Accreditation</span>
+                  <span className="row-value">30 Verifiable CPE Credits</span>
                 </div>
               </div>
 
@@ -435,29 +469,55 @@ export default function CourseDetailPage({
               <div className="profile-card-deliverables-box">
                 <span className="deliverables-box-title">VERIFIED TRACK OUTCOMES:</span>
                 <div className="deliverables-checklist">
-                  {highlights.slice(0, 3).map((item, idx) => (
-                    <div key={idx} className="deliv-check-item">
-                      <CheckCircle2 size={13} color="#baff66" style={{ flexShrink: 0, marginTop: '2px' }} />
-                      <span>{item}</span>
-                    </div>
-                  ))}
+                  {highlights.slice(0, 3).map((item, idx) => {
+                    const colonIdx = item.indexOf(':');
+                    const hasColon = colonIdx > -1 && colonIdx < 45;
+                    const oTitle = hasColon ? item.slice(0, colonIdx).trim() : item;
+                    const oDesc = hasColon ? item.slice(colonIdx + 1).trim() : null;
+
+                    return (
+                      <div key={idx} className="deliv-check-item">
+                        <CheckCircle2 size={13} color="#baff66" style={{ flexShrink: 0, marginTop: '2px' }} />
+                        <div>
+                          <strong style={{ color: '#f8fafc', fontWeight: 600, display: 'inline' }}>
+                            {oTitle}{oDesc ? ':' : ''}{' '}
+                          </strong>
+                          {oDesc && (
+                            <span style={{ color: '#94a3b8' }}>
+                              {oDesc.length > 70 ? `${oDesc.slice(0, 68)}...` : oDesc}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
 
-              <button
-                type="button"
-                className="profile-card-book-btn"
-                onClick={() => {
-                  if (isInCart(track.slug)) {
-                    setIsCartOpen(true);
-                  } else {
-                    addToCart(trackCartItem);
-                  }
-                }}
-              >
-                <ShoppingCart size={13} />
-                <span>{isInCart(track.slug) ? 'View Cart to Checkout' : `Enroll Now · $${trackPrice}`}</span>
-              </button>
+              {/* Tuition & Quick Enrollment Action */}
+              <div className="profile-pricing-block">
+                <div className="profile-price-display">
+                  <span className="profile-price-num">${trackPrice}</span>
+                  <span className="profile-price-label">/ lifetime curriculum access</span>
+                </div>
+                <button
+                  type="button"
+                  className="profile-card-book-btn"
+                  onClick={() => {
+                    if (isInCart(track.slug)) {
+                      setIsCartOpen(true);
+                    } else {
+                      addToCart(trackCartItem);
+                    }
+                  }}
+                >
+                  <Zap size={13} />
+                  <span>{isInCart(track.slug) ? 'View Cart to Checkout' : 'Quick Enroll · Instant Access'}</span>
+                </button>
+                <span className="profile-guarantee-micro">
+                  <Shield size={11} color="#baff66" /> 30-Day Money-Back Guarantee · Instant Lab Provisioning
+                </span>
+              </div>
             </div>
           </div>
         </div>
